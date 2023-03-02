@@ -7,6 +7,8 @@
 
 #include <Windows.h>
 
+#include <MinHook.h>
+
 void __stdcall injected(void* dll_handle) {
 	const uint8_t* client = (uint8_t*)GetModuleHandle("PDUWP.exe");
 
