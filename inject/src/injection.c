@@ -8,6 +8,9 @@
 
 #include "injection.h"
 
+/*
+ * get_pid_by_name(): Taken from Skill Editor (Torphedo)
+*/
 uint32_t get_pid_by_name(LPCTSTR ProcessName)
 {
     PROCESSENTRY32 pt = {
@@ -27,6 +30,12 @@ uint32_t get_pid_by_name(LPCTSTR ProcessName)
     return 0;
 }
 
+/*
+ * set_access_control(): Adapted from its C++ equivalent in UWPDUmper (Wunkolo)
+ * https://github.com/Wunkolo/UWPDumper/blob/master/UWPInjector/source/main.cpp#L440-L503
+ * Calling this doesn't actually seem to be necessary for injecting into a UWP app.
+ * Maybe this makes injection more reliable in edge cases or allows files to be dumped.
+ */
 void set_access_control(const char* ExecutableName, const char* AccessString)
 {
     PSECURITY_DESCRIPTOR SecurityDescriptor = NULL;
@@ -92,6 +101,10 @@ void set_access_control(const char* ExecutableName, const char* AccessString)
     }
 }
 
+/*
+ * dll_inject_remote(): Manual map DLL injector, adapted from C++ code in UWPDumper (Wunkolo)
+ * https://github.com/Wunkolo/UWPDumper/blob/master/UWPInjector/source/main.cpp#L440-L503
+ */
 bool dll_inject_remote(uint32_t process_id, const char* dll_path, uint64_t dll_path_size)
 {
     if(!process_id)
