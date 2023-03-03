@@ -16,7 +16,7 @@ int main(int argc, char** argv)
 {
     if (argc == 1)
     {
-        printf("Usage:\n\n\tinject [dll file] [executable target]\n\nExample:\n\n\tinject payload.dll PDUWP.exe\n");
+        printf("Usage:\n\n\tinject [dll file] [executable target]\n\nExample:\n\n\tinject pdpm.dll PDUWP.exe\n");
         return EXIT_FAILURE;
     }
 

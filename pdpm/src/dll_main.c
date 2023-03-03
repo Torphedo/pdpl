@@ -24,12 +24,12 @@ void __stdcall injected(void* dll_handle) {
 		Sleep(500);
 		if (gsdata[0x10] == 0)
 		{
-            printf("payload: Set version number to 1.40.\n");
+            printf("pdpm: Set version number to 1.40.\n");
 			*(uint32_t*)&gsdata[0x10] = 140;
 		}
 		else
 		{
-            printf("payload: Set version number to 0.00.\n");
+            printf("pdpm: Set version number to 0.00.\n");
 			*(uint32_t*)&gsdata[0x10] = 0;
 		}
 	}
