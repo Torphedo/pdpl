@@ -32,6 +32,12 @@ bool console_setup(int16_t min_height, console_create method) {
 
     if (success) {
         console_set_min_height(min_height);
+
+        // Enable ANSI escape codes
+        uint32_t ConsoleMode = 0;
+        GetConsoleMode(GetStdHandle(STD_OUTPUT_HANDLE), (LPDWORD) &ConsoleMode);
+        SetConsoleMode(GetStdHandle(STD_OUTPUT_HANDLE), ConsoleMode | ENABLE_VIRTUAL_TERMINAL_PROCESSING);
+
         console_set_shown(CONSOLE_SHOW);
         return console_redirect_stdio(DEST_PROCESS_CONSOLE);
     }
