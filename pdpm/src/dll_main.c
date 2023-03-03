@@ -13,15 +13,37 @@
 #include <MinHook.h>
 
 #include "console.h"
+#include "hooks.h"
 
 void __stdcall injected(void* dll_handle) {
+    console_setup(32000, CONSOLE_CREATE);
+    SetConsoleTitle("Phantom Dust Plugin Console");
+
+    MH_Initialize();
+    printf("Plugin Manager: Initializing hooks...\n");
+
+    LPVOID target = &ReadFile;
+
+    if (MH_CreateHookApiEx(L"kernel32", "ReadFile", &hook_ReadFile, NULL, NULL) != MH_OK) {
+        printf("Plugin Manager: Failed to create hook from ReadFile() to hook_ReadFile().\n");
+    }
+    if (MH_EnableHook(&ReadFile) != MH_OK) {
+        printf("Failed to enable hook from ReadFile() to hook_ReadFile().\n");
+    }
+    printf("Plugin Manager: Enabled 1 hook.\n");
+
+    printf("Initialized Phantom Dust Plugin Manager.\nCreated console.\n");
+
+    // Dummy ReadFile() call to test hook.
+    ReadFile(NULL, NULL, 0, NULL, NULL);
+
 	const uint8_t* client = (uint8_t*)GetModuleHandle("PDUWP.exe");
 
 	const uint8_t* gsdata = (client + 0x4C5240);
 
 	while (!GetAsyncKeyState(VK_END))
 	{
-		Sleep(500);
+		Sleep(1000);
 		if (gsdata[0x10] == 0)
 		{
             printf("pdpm: Set version number to 1.40.\n");
@@ -44,11 +66,6 @@ int32_t __stdcall DllMain(HINSTANCE dll_handle, uint32_t reason, void* reserved)
 	{
 		// Disable DLL notifications for new threads starting up, because we have no need to run special code here.
 		DisableThreadLibraryCalls(dll_handle);
-
-        console_setup(32000, CONSOLE_CREATE);
-        SetConsoleTitle("Phantom Dust Plugin Console");
-
-        printf("Initialized Phantom Dust Plugin Manager.\nCreated console.\n");
 
 		// Start injected code
 		CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE) injected, dll_handle, 0, NULL);
