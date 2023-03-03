@@ -1,7 +1,14 @@
 #include <stdio.h>
 #include <stdint.h>
+#include <stdlib.h>
 
-#include <windows.h>
+// Reduce the size of Windows.h to improve compile time
+#define WIN32_LEAN_AND_MEAN
+#define NOCOMM
+#define NOCLIPBOARD
+#define NODRAWTEXT
+#define NOMB
+#include <Windows.h>
 
 #include "injection.h"
 
@@ -13,12 +20,13 @@ int main(int argc, char** argv)
         return EXIT_FAILURE;
     }
 
+    // Turn any relative paths received from the user into full paths
     char full_path[MAX_PATH] = { 0 };
     GetFullPathNameA(argv[1], MAX_PATH, full_path, NULL);
 
-    // Enable VT100
-	DWORD ConsoleMode;
-	GetConsoleMode(GetStdHandle(STD_OUTPUT_HANDLE), &ConsoleMode);
+    // Enable VT100 (ANSI escape codes)
+	uint32_t ConsoleMode = 0;
+	GetConsoleMode(GetStdHandle(STD_OUTPUT_HANDLE), (LPDWORD) &ConsoleMode);
 	SetConsoleMode(GetStdHandle(STD_OUTPUT_HANDLE), ConsoleMode | ENABLE_VIRTUAL_TERMINAL_PROCESSING);
 
 	printf("\033[93mInjecting into remote process: ");
