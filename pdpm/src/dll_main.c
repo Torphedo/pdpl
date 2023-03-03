@@ -46,8 +46,9 @@ int32_t __stdcall DllMain(HINSTANCE dll_handle, uint32_t reason, void* reserved)
 		DisableThreadLibraryCalls(dll_handle);
 
         console_setup(32000, CONSOLE_CREATE);
+        SetConsoleTitle("Phantom Dust Plugin Console");
 
-        printf("Started plugin console.\n");
+        printf("Initialized Phantom Dust Plugin Manager.\nCreated console.\n");
 
 		// Start injected code
 		CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE) injected, dll_handle, 0, NULL);
