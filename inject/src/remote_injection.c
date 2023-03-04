@@ -12,7 +12,7 @@
 
 #include <TlHelp32.h>
 
-#include "injection.h"
+#include "remote_injection.h"
 
 /*
  * get_pid_by_name(): Taken from Skill Editor (Torphedo)

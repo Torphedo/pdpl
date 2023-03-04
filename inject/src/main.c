@@ -9,7 +9,7 @@
 #define NOMB
 #include <Windows.h>
 
-#include "injection.h"
+#include "remote_injection.h"
 
 int main(int argc, char** argv)
 {
