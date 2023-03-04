@@ -25,4 +25,5 @@ add_subdirectory(ext/physfs)
 add_subdirectory(ext/minhook)
 
 add_subdirectory(inject)
+add_subdirectory(test_plugin)
 add_subdirectory(pdpm)
