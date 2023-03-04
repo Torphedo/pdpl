@@ -9,8 +9,6 @@
 #define NOMB
 
 #include <Windows.h>
-
-#include <MinHook.h>
 #include <physfs.h>
 
 #include "console.h"
@@ -26,9 +24,6 @@ void __stdcall injected(void* dll_handle) {
     // We pass NULL for the "argv[0]" parameter because DLLs don't have arguments
     PHYSFS_init(NULL);
     printf("Plugin Manager: Initialized virtual filesystem.\n");
-
-    // Dummy CreateFile2() call to test hook.
-    CreateFile2(NULL, 0, 0, 0, NULL);
 
 	const uint8_t* client = (uint8_t*)GetModuleHandle("PDUWP.exe");
 

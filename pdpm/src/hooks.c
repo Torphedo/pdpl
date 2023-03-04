@@ -15,7 +15,7 @@ bool hook_ReadFile(HANDLE hFile, LPVOID buffer, uint32_t bytes_to_read, LPDWORD 
 }
 
 HANDLE hook_CreateFile2(LPCWSTR lpFileName, DWORD dwDesiredAccess, DWORD dwShareMode, DWORD dwCreationDisposition, LPCREATEFILE2_EXTENDED_PARAMETERS pCreateExParams) {
-    printf("CreateFile2(): Intercepted opening of the file %ws.\n", lpFileName);
+    printf("CreateFile2(): Opened %ws.\n", lpFileName);
     return original_CreateFile2(lpFileName, dwDesiredAccess, dwShareMode, dwCreationDisposition, pCreateExParams);
 }
 
