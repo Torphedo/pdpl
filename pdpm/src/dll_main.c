@@ -11,6 +11,7 @@
 #include <Windows.h>
 
 #include <MinHook.h>
+#include <physfs.h>
 
 #include "console.h"
 #include "hooks.h"
@@ -18,43 +19,34 @@
 void __stdcall injected(void* dll_handle) {
     console_setup(32000, CONSOLE_CREATE);
     SetConsoleTitle("Phantom Dust Plugin Console");
-
-    MH_Initialize();
-    printf("Plugin Manager: Initializing hooks...\n");
-
-    LPVOID target = &ReadFile;
-
-    if (MH_CreateHookApiEx(L"kernel32", "ReadFile", &hook_ReadFile, NULL, NULL) != MH_OK) {
-        printf("Plugin Manager: Failed to create hook from ReadFile() to hook_ReadFile().\n");
-    }
-    if (MH_EnableHook(&ReadFile) != MH_OK) {
-        printf("Failed to enable hook from ReadFile() to hook_ReadFile().\n");
-    }
-    printf("Plugin Manager: Enabled 1 hook.\n");
-
     printf("Initialized Phantom Dust Plugin Manager.\nCreated console.\n");
 
-    // Dummy ReadFile() call to test hook.
-    ReadFile(NULL, NULL, 0, NULL, NULL);
+    setup_hooks();
+
+    // We pass NULL for the "argv[0]" parameter because DLLs don't have arguments
+    PHYSFS_init(NULL);
+    printf("Plugin Manager: Initialized virtual filesystem.\n");
+
+    // Dummy CreateFile2() call to test hook.
+    CreateFile2(NULL, 0, 0, 0, NULL);
 
 	const uint8_t* client = (uint8_t*)GetModuleHandle("PDUWP.exe");
 
 	const uint8_t* gsdata = (client + 0x4C5240);
 
-	while (!GetAsyncKeyState(VK_END))
-	{
+	while (!GetAsyncKeyState(VK_END)) {
 		Sleep(1000);
-		if (gsdata[0x10] == 0)
-		{
-            printf("pdpm: Set version number to 1.40.\n");
+		if (gsdata[0x10] == 0) {
+            // printf("pdpm: Set version number to 1.40.\n");
 			*(uint32_t*)&gsdata[0x10] = 140;
 		}
-		else
-		{
-            printf("pdpm: Set version number to 0.00.\n");
+		else {
+            // printf("pdpm: Set version number to 0.00.\n");
 			*(uint32_t*)&gsdata[0x10] = 0;
 		}
 	}
+
+    PHYSFS_deinit();
 
 	// Uninject
 	FreeLibraryAndExitThread((HMODULE)(dll_handle), EXIT_SUCCESS);
