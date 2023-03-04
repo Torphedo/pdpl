@@ -13,32 +13,42 @@
 
 #include "console.h"
 #include "hooks.h"
+#include "path.h"
 
-void __stdcall injected(void* dll_handle) {
+void __stdcall injected(HMODULE dll_handle) {
     console_setup(32000, CONSOLE_CREATE);
     SetConsoleTitle("Phantom Dust Plugin Console");
-    printf("Initialized Phantom Dust Plugin Manager.\nCreated console.\n");
-
+    printf("Plugin Manager: Created console.\n");
     setup_hooks();
 
-    // We pass NULL for the "argv[0]" parameter because DLLs don't have arguments
+    // We pass NULL for the "argv[0]" parameter because we don't have argv
     PHYSFS_init(NULL);
     printf("Plugin Manager: Initialized virtual filesystem.\n");
 
-	const uint8_t* client = (uint8_t*)GetModuleHandle("PDUWP.exe");
+    // Get DLL's path
+    static char module_path[MAX_PATH] = { 0 };
+    GetModuleFileNameA(dll_handle, module_path, MAX_PATH);
+    path_truncate(module_path, MAX_PATH + 1);
 
+    printf("Plugin Folder: %s\n", module_path);
+    if (path_is_plugin_folder(module_path)) {
+        printf("Plugin Folder: Valid\n");
+    }
+    else {
+        printf("Plugin Folder: Invalid\n");
+    }
+
+    strcat(module_path, "test_plugin.dll");
+    printf("Plugin Manager: Loading plugin %s\n", module_path);
+    // Inject plugin DLL here.
+
+    printf("Plugin Manager: Initialized. Welcome to Phantom Dust Plugin Manager.\n");
+
+	const uint8_t* client = (uint8_t*)GetModuleHandle("PDUWP.exe");
 	const uint8_t* gsdata = (client + 0x4C5240);
 
 	while (!GetAsyncKeyState(VK_END)) {
 		Sleep(1000);
-		if (gsdata[0x10] == 0) {
-            // printf("pdpm: Set version number to 1.40.\n");
-			*(uint32_t*)&gsdata[0x10] = 140;
-		}
-		else {
-            // printf("pdpm: Set version number to 0.00.\n");
-			*(uint32_t*)&gsdata[0x10] = 0;
-		}
 	}
 
     PHYSFS_deinit();
