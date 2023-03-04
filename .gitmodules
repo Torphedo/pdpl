@@ -1,3 +1,6 @@
 [submodule "ext/minhook"]
 	path = ext/minhook
 	url = https://github.com/TsudaKageyu/minhook
+[submodule "ext/physfs"]
+	path = ext/physfs
+	url = https://github.com/icculus/physfs

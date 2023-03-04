@@ -4,5 +4,5 @@ add_library(pdpm SHARED
     "src/hooks.c"
 )
 
-target_link_libraries(pdpm PRIVATE minhook)
-target_include_directories(pdpm PRIVATE "../ext/minhook/include")
+target_link_libraries(pdpm PRIVATE minhook physfs-static)
+target_include_directories(pdpm PRIVATE "../ext/minhook/include" "../ext/physfs/src")
