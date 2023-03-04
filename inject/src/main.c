@@ -1,5 +1,4 @@
 #include <stdio.h>
-#include <stdint.h>
 #include <stdlib.h>
 
 // Reduce the size of Windows.h to improve compile time
@@ -17,6 +16,7 @@ int main(int argc, char** argv)
     if (argc == 1)
     {
         printf("Usage:\n\n\tinject [dll file] [executable target]\n\nExample:\n\n\tinject pdpm.dll PDUWP.exe\n");
+        system("pause");
         return EXIT_FAILURE;
     }
 
@@ -24,19 +24,14 @@ int main(int argc, char** argv)
     char full_path[MAX_PATH] = { 0 };
     GetFullPathNameA(argv[1], MAX_PATH, full_path, NULL);
 
-    // Enable VT100 (ANSI escape codes)
-	uint32_t ConsoleMode = 0;
-	GetConsoleMode(GetStdHandle(STD_OUTPUT_HANDLE), (LPDWORD) &ConsoleMode);
-	SetConsoleMode(GetStdHandle(STD_OUTPUT_HANDLE), ConsoleMode | ENABLE_VIRTUAL_TERMINAL_PROCESSING);
-
-	printf("\033[93mInjecting into remote process: ");
+	printf("Injecting mods into Phantom Dust...\n");
 	if(!dll_inject_remote(get_pid_by_name(argv[2]), full_path, MAX_PATH + 1))
 	{
-		printf("\033[91mFailed\033[0m\n");
+		printf("Failed.\n");
 		system("pause");
 		return EXIT_FAILURE;
 	}
-	printf("\033[92mSuccess!\033[0m\n");
+	printf("Success!\n");
 
 	return EXIT_SUCCESS;
 }

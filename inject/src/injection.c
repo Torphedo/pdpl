@@ -85,11 +85,11 @@ void set_access_control(const char* ExecutableName, const char* AccessString) {
 bool dll_inject_remote(uint32_t process_id, const char* dll_path, uint64_t dll_path_size)
 {
     if(process_id == 0) {
-        printf("dll_inject_remote(): Invalid Process ID: %d\n", process_id);
+        printf("Injector: Invalid Process ID %d\n", process_id);
         return false;
     }
     if(GetFileAttributes(dll_path) == INVALID_FILE_ATTRIBUTES) {
-        printf("dll_inject_remote(): The requested DLL \"%s\" does not exist.\n", dll_path);
+        printf("Injector: The requested DLL \"%s\" does not exist.\n", dll_path);
         return false;
     }
 
@@ -97,19 +97,19 @@ bool dll_inject_remote(uint32_t process_id, const char* dll_path, uint64_t dll_p
 
     void* proc_LoadLibrary = (void*)GetProcAddress(GetModuleHandle("kernel32.dll"), "LoadLibraryA");
     if(proc_LoadLibrary == NULL) {
-        printf("dll_inject_remote(): Unable to find LoadLibraryA procedure.\n");
+        printf("Injector: Unable to find LoadLibraryA procedure.\n");
         return false;
     }
 
     void* process = OpenProcess(PROCESS_ALL_ACCESS, false, process_id);
     if(process == NULL) {
-        printf("dll_inject_remote(): Unable to open process ID %d for writing\n", process_id);
+        printf("Injector: Unable to open process ID %d for writing.\n", process_id);
         return false;
     }
 
     void* remote_dll_path = (void*)VirtualAllocEx(process, NULL, dll_path_size, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
     if(remote_dll_path == NULL) {
-        printf("dll_inject_remote(): Unable to remotely allocate memory.\n");
+        printf("Injector: Unable to remotely allocate memory.\n");
         CloseHandle(process);
         return false;
     }
@@ -118,13 +118,13 @@ bool dll_inject_remote(uint32_t process_id, const char* dll_path, uint64_t dll_p
     bool result = WriteProcessMemory(process, remote_dll_path, dll_path, dll_path_size, &size_written);
 
     if(result == 0) {
-        printf("dll_inject_remote(): Unable to write process memory.\n");
+        printf("Injector: Unable to write process memory.\n");
         CloseHandle(process);
         return false;
     }
 
     if(size_written != dll_path_size) {
-        printf("dll_inject_remote(): Failed to write remote DLL path name.\n");
+        printf("Injector: Failed to write remote DLL path name.\n");
         CloseHandle(process);
         return false;
     }
@@ -138,7 +138,7 @@ bool dll_inject_remote(uint32_t process_id, const char* dll_path, uint64_t dll_p
         CloseHandle(remote_thread);
     }
     else {
-        printf("dll_inject_remote(): Unable to create remote thread.\n");
+        printf("Injector: Unable to create remote thread.\n");
     }
 
     VirtualFreeEx(process, remote_dll_path, 0, MEM_RELEASE);
