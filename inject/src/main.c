@@ -13,16 +13,9 @@
 
 int main(int argc, char** argv)
 {
-    if (argc == 1)
-    {
-        printf("Usage:\n\n\tinject [dll file]\n\nExample:\n\n\tinject pdpm.dll\n");
-        system("pause");
-        return EXIT_FAILURE;
-    }
-
-    // Turn any relative paths received from the user into full paths
+    // Turn relative paths into full paths
     char full_path[MAX_PATH] = { 0 };
-    GetFullPathNameA(argv[1], MAX_PATH, full_path, NULL);
+    GetFullPathNameA("pdpm.dll", MAX_PATH, full_path, NULL);
 
     // Kill Phantom Dust if it's already running
     uint32_t process_id = get_pid_by_name("PDUWP.exe");
