@@ -13,6 +13,7 @@
 
 #include "console.h"
 #include "path.h"
+#include "hooks.h"
 #include "filesystem.h"
 
 static const char plugin_manager_msg[] = "[\033[32mPlugin Manager\033[0m]";

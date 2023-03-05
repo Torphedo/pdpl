@@ -2,8 +2,7 @@
 #include <stdint.h>
 #include <string.h>
 
-#include <shlobj_core.h>
-#include <stdio.h>
+#include <shlobj.h>
 
 #include "path.h"
 

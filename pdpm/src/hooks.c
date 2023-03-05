@@ -1,5 +1,8 @@
 #include <stdio.h>
 
+#define _WIN32_WINNT 0x0603
+
+#include <fileapi.h>
 #include <MinHook.h>
 #include <physfs.h>
 
