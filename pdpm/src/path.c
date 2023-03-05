@@ -27,6 +27,12 @@ bool path_is_plugin_folder(const char* path) {
     return plugins && mods;
 }
 
+bool path_has_extension(const char* path, const char* extension) {
+    uint32_t pos = strlen(path);
+    uint16_t ext_length = strlen(extension);
+    return (strncmp(&path[pos - ext_length], extension, ext_length) == 0);
+}
+
 void path_fix_backslashes(char* path) {
     uint16_t pos = strlen(path) - 1; // Subtract 1 so that we don't need to check null terminator
     while (pos > 0) {

@@ -12,38 +12,22 @@
 #include <physfs.h>
 
 #include "console.h"
-#include "hooks.h"
 #include "path.h"
+#include "filesystem.h"
+
+static const char plugin_manager_msg[] = "[\033[32mPlugin Manager\033[0m]";
 
 void __stdcall injected(HMODULE dll_handle) {
     console_setup(32000, CONSOLE_CREATE);
     SetConsoleTitle("Phantom Dust Plugin Console");
-    printf("Plugin Manager: Created console.\n");
-
-    PHYSFS_init(NULL);
-
-    // Get game RoamingState path
-    char app_path[MAX_PATH] = { 0 };
-    get_ms_esper_path(app_path);
-
-    // Enabling writing to this directory and make the mod / plugin folders if necessary
-    PHYSFS_setWriteDir(app_path);
-    PHYSFS_mkdir("mods/plugins");
-
-    // Add mod folder to the search path
-    strcat(app_path, "mods");
-    if (PHYSFS_mount(app_path, "/Assets/Data/", true) == 0) {
-        printf("Failed to add %s to the virtual filesystem. (%s)\n", app_path, PHYSFS_getLastError());
-    }
-    else {
-        printf("Added directory to virtual filesystem at /Assets/Data/: %s\n", app_path);
-    }
-
-    setup_hooks();
+    printf("%s: Created console.\n", plugin_manager_msg);
+    printf("%s: Initializing hooks...\n", plugin_manager_msg);
+    hooks_setup();
+    vfs_setup();
 
     // Inject plugin DLL here.
 
-    printf("Plugin Manager: Initialized. Welcome to Phantom Dust Plugin Manager.\n");
+    printf("%s: Finished startup. Welcome to Phantom Dust Plugin Manager.\n\n", plugin_manager_msg);
 
 	while (true) {
 		Sleep(1000);

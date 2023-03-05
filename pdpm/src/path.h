@@ -1,9 +1,12 @@
 #include <stdbool.h>
+#include <stdint.h>
 
 void get_ms_esper_path(char* string);
 
 // Checks if a path ends in "mods\plugins\", "mods\plugins", "mods/plugins/", or "mods/plugins"
 bool path_is_plugin_folder(const char* path);
+
+bool path_has_extension(const char* path, const char* extension);
 
 /// Replaces all backslashes in a string with forward slashes.
 /// \param path String to edit. Must be null-terminated.

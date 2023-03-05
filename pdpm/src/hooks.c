@@ -22,14 +22,13 @@ HANDLE hook_CreateFile2(LPCWSTR lpFileName, DWORD dwDesiredAccess, DWORD dwShare
     path_fix_backslashes(filename);
     printf("CreateFile2(): Opened %s\n", filename);
     if (PHYSFS_exists(filename)) {
-        printf("[File exists in modded filesystem]\n");
+        printf("[File found in modded filesystem, unable to load mod files in this build]\n");
     }
     return original_CreateFile2(lpFileName, dwDesiredAccess, dwShareMode, dwCreationDisposition, pCreateExParams);
 }
 
-bool setup_hooks() {
+bool hooks_setup() {
     MH_Initialize();
-    printf("Plugin Manager: Initializing hooks...\n");
 
     HMODULE kernelbase = GetModuleHandleW(L"KERNELBASE.dll");
     if (kernelbase == NULL) {
@@ -45,6 +44,6 @@ bool setup_hooks() {
         printf("Failed to enable hook from CreateFile2() to hook_CreateFile2().\n");
         return false;
     }
-    printf("Plugin Manager: Enabled 1 hook.\n");
+    printf("Enabled 1 hook.\n");
     return true;
 }

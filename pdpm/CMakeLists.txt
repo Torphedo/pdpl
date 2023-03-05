@@ -3,6 +3,7 @@ add_library(pdpm SHARED
 	"src/console.c"
     "src/hooks.c"
 	"src/path.c"
+	"src/filesystem.c"
 )
 
 target_link_libraries(pdpm PRIVATE minhook physfs-static)
