@@ -19,35 +19,33 @@ void __stdcall injected(HMODULE dll_handle) {
     console_setup(32000, CONSOLE_CREATE);
     SetConsoleTitle("Phantom Dust Plugin Console");
     printf("Plugin Manager: Created console.\n");
-    setup_hooks();
 
-    // We pass NULL for the "argv[0]" parameter because we don't have argv
     PHYSFS_init(NULL);
-    printf("Plugin Manager: Initialized virtual filesystem.\n");
 
-    // Get DLL's path
-    static char module_path[MAX_PATH] = { 0 };
-    GetModuleFileNameA(dll_handle, module_path, MAX_PATH);
-    path_truncate(module_path, MAX_PATH + 1);
+    // Get game RoamingState path
+    char app_path[MAX_PATH] = { 0 };
+    get_ms_esper_path(app_path);
 
-    printf("Plugin Folder: %s\n", module_path);
-    if (path_is_plugin_folder(module_path)) {
-        printf("Plugin Folder: Valid\n");
+    // Enabling writing to this directory and make the mod / plugin folders if necessary
+    PHYSFS_setWriteDir(app_path);
+    PHYSFS_mkdir("mods/plugins");
+
+    // Add mod folder to the search path
+    strcat(app_path, "mods");
+    if (PHYSFS_mount(app_path, "/Assets/Data/", true) == 0) {
+        printf("Failed to add %s to the virtual filesystem. (%s)\n", app_path, PHYSFS_getLastError());
     }
     else {
-        printf("Plugin Folder: Invalid\n");
+        printf("Added directory to virtual filesystem at /Assets/Data/: %s\n", app_path);
     }
 
-    strcat(module_path, "test_plugin.dll");
-    printf("Plugin Manager: Loading plugin %s\n", module_path);
+    setup_hooks();
+
     // Inject plugin DLL here.
 
     printf("Plugin Manager: Initialized. Welcome to Phantom Dust Plugin Manager.\n");
 
-	const uint8_t* client = (uint8_t*)GetModuleHandle("PDUWP.exe");
-	const uint8_t* gsdata = (client + 0x4C5240);
-
-	while (!GetAsyncKeyState(VK_END)) {
+	while (true) {
 		Sleep(1000);
 	}
 

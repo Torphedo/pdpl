@@ -2,7 +2,18 @@
 #include <stdint.h>
 #include <string.h>
 
+#include <shlobj_core.h>
+
 #include "path.h"
+
+void get_ms_esper_path(char* string) {
+    if (SHGetFolderPathA(0, CSIDL_LOCAL_APPDATA, NULL, 0, string) == S_OK) {
+        uint16_t length = strlen(string); // Remove the "AC" folder name from the end of the path.
+        string[length - 1] = 0;
+        string[length - 2] = 0;
+        strcat(string, "RoamingState\\");
+    }
+}
 
 bool path_is_plugin_folder(const char* path) {
     uint16_t pos = strlen(path) - 2; // Skip over trailing slash
@@ -14,6 +25,16 @@ bool path_is_plugin_folder(const char* path) {
     bool mods = (strncmp(&path[pos + 2], "mods", sizeof("mods") - 1) == 0);
 
     return plugins && mods;
+}
+
+void path_fix_backslashes(char* path) {
+    uint16_t pos = strlen(path) - 1; // Subtract 1 so that we don't need to check null terminator
+    while (pos > 0) {
+        if (path[pos] == '\\') {
+            path[pos] = '/';
+        }
+        pos--;
+    }
 }
 
 uint16_t path_pos_next_folder(const char* path, uint16_t start_pos) {
@@ -28,9 +49,9 @@ uint16_t path_pos_next_folder(const char* path, uint16_t start_pos) {
     return pos - 1;
 }
 
-void path_truncate(char* path, uint16_t size) {
-    path[size--] = 0; // Removes last character to take care of trailing "\\" or "/".
-    while(path[size] != '\\' && path[size] != '/') {
-        path[size--] = 0;
+void path_truncate(char* path, uint16_t pos) {
+    path[--pos] = 0; // Removes last character to take care of trailing "\\" or "/".
+    while(path[pos] != '\\' && path[pos] != '/') {
+        path[pos--] = 0;
     }
 }

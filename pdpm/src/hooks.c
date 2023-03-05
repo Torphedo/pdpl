@@ -1,8 +1,10 @@
 #include <stdio.h>
 
 #include <MinHook.h>
+#include <physfs.h>
 
 #include "hooks.h"
+#include "path.h"
 
 typedef HANDLE (*CREATE_FILE_2)(LPCWSTR, DWORD, DWORD, DWORD, LPCREATEFILE2_EXTENDED_PARAMETERS);
 
@@ -15,7 +17,13 @@ bool hook_ReadFile(HANDLE hFile, LPVOID buffer, uint32_t bytes_to_read, LPDWORD 
 }
 
 HANDLE hook_CreateFile2(LPCWSTR lpFileName, DWORD dwDesiredAccess, DWORD dwShareMode, DWORD dwCreationDisposition, LPCREATEFILE2_EXTENDED_PARAMETERS pCreateExParams) {
-    printf("CreateFile2(): Opened %ws.\n", lpFileName);
+    char filename[MAX_PATH] = {0};
+    PHYSFS_utf8FromUtf16(lpFileName, filename, MAX_PATH);
+    path_fix_backslashes(filename);
+    printf("CreateFile2(): Opened %s\n", filename);
+    if (PHYSFS_exists(filename)) {
+        printf("[File exists in modded filesystem]\n");
+    }
     return original_CreateFile2(lpFileName, dwDesiredAccess, dwShareMode, dwCreationDisposition, pCreateExParams);
 }
 
