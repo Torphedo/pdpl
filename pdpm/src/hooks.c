@@ -19,7 +19,7 @@ bool hook_ReadFile(HANDLE hFile, LPVOID buffer, uint32_t bytes_to_read, LPDWORD 
 HANDLE hook_CreateFile2(LPCWSTR lpFileName, DWORD dwDesiredAccess, DWORD dwShareMode, DWORD dwCreationDisposition, LPCREATEFILE2_EXTENDED_PARAMETERS pCreateExParams) {
     char filename[MAX_PATH] = {0};
     PHYSFS_utf8FromUtf16(lpFileName, filename, MAX_PATH);
-    path_fix_backslashes(filename);
+    path_make_physfs_friendly(filename);
     printf("CreateFile2(): Opened %s\n", filename);
     if (PHYSFS_exists(filename)) {
         printf("[File found in modded filesystem, unable to load mod files in this build]\n");

@@ -22,3 +22,6 @@ uint16_t path_pos_next_folder(const char* path, uint16_t start_pos);
 /// \param path The path to truncate. This string will be edited. If the string does not contain any slashes or backslashes, it will be completely filled with null characters.
 /// \param pos The position to start searching for directory separators. This should usually be the string's length + 1.
 void path_truncate(char* path, uint16_t pos);
+
+// Turn all backslashes into forward slashes and remove "." and ".." paths. The input string must be MAX_PATH characters long.
+void path_make_physfs_friendly(char* path);

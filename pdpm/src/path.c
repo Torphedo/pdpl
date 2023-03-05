@@ -3,6 +3,7 @@
 #include <string.h>
 
 #include <shlobj_core.h>
+#include <stdio.h>
 
 #include "path.h"
 
@@ -59,5 +60,29 @@ void path_truncate(char* path, uint16_t pos) {
     path[--pos] = 0; // Removes last character to take care of trailing "\\" or "/".
     while(path[pos] != '\\' && path[pos] != '/') {
         path[pos--] = 0;
+    }
+}
+
+void path_make_physfs_friendly(char* path) {
+    // Copy string to a new buffer
+    char string_cpy[MAX_PATH] = {0};
+    strncpy(string_cpy, path, MAX_PATH);
+    memset(path, 0, MAX_PATH); // Delete input string
+
+    // Make all directory separators into '/'
+    path_fix_backslashes(string_cpy);
+
+    for(uint16_t i = 0; i < MAX_PATH; i++) {
+        if (memcmp(&string_cpy[i], "/../", 4) == 0) {
+            path_truncate(path, i);
+            i += 2;
+            continue;
+        }
+        else if (memcmp(&string_cpy[i], "/./", 3) == 0) {
+            i++;
+            continue;
+        }
+        // Append string_cpy[i] to the output path.
+        strncat(path, &string_cpy[i], 1);
     }
 }

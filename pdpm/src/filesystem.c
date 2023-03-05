@@ -51,10 +51,10 @@ static PHYSFS_EnumerateCallbackResult recursive_mount(void *data, const char *or
 
         PHYSFS_getMountPoint(virtual_path);
         if (PHYSFS_getLastErrorCode() == PHYSFS_ERR_NOT_MOUNTED) {
-            PHYSFS_mount(virtual_path, origdir, true);
+            PHYSFS_mount(virtual_path, "/Assets/Data", true);
             PHYSFS_setErrorCode(PHYSFS_ERR_OK);
             enumerate_again = true;
-            printf("%s: Mounted %s at %s\n", vfs_msg, virtual_path, origdir);
+            printf("%s: Mounted %s at %s\n", vfs_msg, virtual_path, "/Assets/Data");
             restart_from_beginning = true;
             return PHYSFS_ENUM_STOP;
         }
