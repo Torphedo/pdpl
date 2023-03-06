@@ -14,53 +14,12 @@
 
 #include "filesystem.h"
 #include "path.h"
+#include "hooks.h"
 
 static bool enumerate_again = true;
 
 static const char vfs_msg[] = "[\033[32mVirtual Filesystem\033[0m]";
 static const char vfs_err[] = "[\033[31mVirtual Filesystem\033[0m]";
-
-static PHYSFS_EnumerateCallbackResult recursive_mount(void *data, const char *origdir, const char *fname) {
-    static bool restart_from_beginning = false;
-    if (strcmp(origdir, "/") == 0) {
-        restart_from_beginning = false;
-    }
-
-    if (restart_from_beginning) {
-        return PHYSFS_ENUM_STOP;
-    }
-
-    char virtual_path[MAX_PATH] = {0 };
-    sprintf(virtual_path, "%s/%s", origdir, fname);
-
-    if (PHYSFS_isDirectory(virtual_path)) {
-        PHYSFS_enumerate(virtual_path, recursive_mount, NULL);
-        return PHYSFS_ENUM_OK;
-    }
-
-    if (path_has_extension(fname, ".7z") || path_has_extension(fname, ".zip")) {
-        // Get the full real virtual_path of archive, to mount and check mount point.
-        const char* real_path = PHYSFS_getRealDir(virtual_path);
-
-        // If the real directory is a zip, then someone has nested zips.
-        if (path_has_extension(real_path, ".7z") || path_has_extension(real_path, ".zip")) {
-            printf("%s: Nested zip files are not supported, at least not right now. Take the nested zip file out of %s.\n", vfs_err, real_path);
-            return PHYSFS_ENUM_OK;
-        }
-        sprintf(virtual_path, "%s%s%s", real_path, PHYSFS_getDirSeparator(), fname);
-
-        PHYSFS_getMountPoint(virtual_path);
-        if (PHYSFS_getLastErrorCode() == PHYSFS_ERR_NOT_MOUNTED) {
-            PHYSFS_mount(virtual_path, "/Assets/Data", true);
-            PHYSFS_setErrorCode(PHYSFS_ERR_OK);
-            enumerate_again = true;
-            printf("%s: Mounted %s at %s\n", vfs_msg, virtual_path, "/Assets/Data");
-            restart_from_beginning = true;
-            return PHYSFS_ENUM_STOP;
-        }
-    }
-    return PHYSFS_ENUM_OK;
-}
 
 void vfs_setup() {
     printf("\n%s: Starting up...\n", vfs_msg);
@@ -68,6 +27,18 @@ void vfs_setup() {
 
     // Get game RoamingState path
     char app_path[MAX_PATH] = { 0 };
+
+    // Get path to Phantom Dust files by getting location of PDUWP.exe and truncating the filename
+    GetModuleFileNameA(NULL, app_path, MAX_PATH);
+    path_truncate(app_path, MAX_PATH);
+    app_path[strlen(app_path) - 1] = 0; // Cut off trailing backslash
+
+    path_fix_backslashes(app_path);
+    // Mount to root of VFS, and prepend to search path list so that it's the last resort.
+    PHYSFS_mount(app_path, "/", false);
+    printf("%s: Mounting vanilla game (%s) at the filesystem root.\n", vfs_msg, app_path);
+
+    memset(app_path, 0, MAX_PATH); // Clear string so there are no leftovers of the old string
     get_ms_esper_path(app_path);
 
     // Enabling writing to this directory and make the mod / plugin folders if necessary
@@ -77,15 +48,34 @@ void vfs_setup() {
     // Add mod folder to the search path
     strcat(app_path, "mods");
     if (PHYSFS_mount(app_path, "/Assets/Data/", true) == 0) {
-        printf("%s: Failed to add %s to the virtual filesystem. (%s)\n", vfs_err, app_path, PHYSFS_getLastError());
+        printf("%s: Failed to add %s to the virtual filesystem. (%s)\n", vfs_err, app_path, PHYSFS_getErrorByCode(PHYSFS_getLastErrorCode()));
     }
     else {
         printf("%s: Mounted %s at /Assets/Data/\n", vfs_msg, app_path);
     }
 
-    while(enumerate_again) {
-        enumerate_again = false;
-        PHYSFS_enumerate("/", recursive_mount, NULL);
+    // Recursive Archive Mounter
+    static const char* dir = "/Assets/Data";
+    char** file_list = PHYSFS_enumerateFiles(dir);
+
+    for (char** i = file_list; *i != NULL; i++) {
+        if (path_has_extension(*i, ".7z") || path_has_extension(*i, ".zip")) {
+            char full_path[MAX_PATH] = {0};
+
+            // Get full virtual filesystem path.
+            sprintf(full_path, "%s/%s", dir, *i);
+            printf("%s: Mounting %s at /Assets/Data\n", vfs_msg, full_path);
+
+            // Real search path + / or \ + filename
+            sprintf(full_path, "%s%s%s",PHYSFS_getRealDir(full_path), PHYSFS_getDirSeparator(), *i);
+
+            // Mount to the current virtual directory.
+            PHYSFS_mount(full_path, dir, true);
+        }
     }
-    printf("%s: Finished setting up.\n\n", vfs_msg);
+    PHYSFS_freeList(file_list);
+
+    printf("%s: Finished setting up.\n", vfs_msg);
+    printf("%s: Unlocking files for read/write...\n\n", vfs_msg);
+    hooks_unlock_filesystem();
 }

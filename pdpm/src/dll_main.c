@@ -23,7 +23,7 @@ void __stdcall injected(HMODULE dll_handle) {
     SetConsoleTitle("Phantom Dust Plugin Console");
     printf("%s: Created console.\n", plugin_manager_msg);
     printf("%s: Initializing hooks...\n", plugin_manager_msg);
-    hooks_setup();
+    hooks_setup_lock_files();
     vfs_setup();
 
     // Inject plugin DLL here.

@@ -1,6 +1,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <string.h>
+#include <stdio.h>
 
 #include <shlobj.h>
 
@@ -30,6 +31,11 @@ bool path_is_plugin_folder(const char* path) {
 bool path_has_extension(const char* path, const char* extension) {
     uint32_t pos = strlen(path);
     uint16_t ext_length = strlen(extension);
+
+    // File extension is longer than input string.
+    if (ext_length > pos) {
+        return false;
+    }
     return (strncmp(&path[pos - ext_length], extension, ext_length) == 0);
 }
 

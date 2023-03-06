@@ -10,5 +10,6 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-bool hooks_setup();
+bool hooks_setup_lock_files();
+void hooks_unlock_filesystem();
 bool hook_ReadFile(HANDLE hFile, LPVOID buffer, uint32_t bytes_to_read, LPDWORD bytes_read_ptr, LPOVERLAPPED overlapped);
