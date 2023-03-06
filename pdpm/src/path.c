@@ -76,16 +76,26 @@ void path_make_physfs_friendly(char* path) {
 
     // Make all directory separators into '/'
     path_fix_backslashes(string_cpy);
-
     for(uint16_t i = 0; i < MAX_PATH; i++) {
-        if (memcmp(&string_cpy[i], "/../", 4) == 0) {
-            path_truncate(path, i);
-            i += 2;
-            continue;
+        // saveoptions.ini is in the UWP RoamingState folder, it's easier to just search for it and replace it entirely.
+        if (memcmp(&string_cpy[strlen(string_cpy) - sizeof("saveoptions.ini") + 1], "saveoptions.ini", sizeof("saveoptions.ini")) == 0) {
+            sprintf(path, "/Assets/Data/saveoptions.ini");
+            break;
         }
-        else if (memcmp(&string_cpy[i], "/./", 3) == 0) {
-            i++;
-            continue;
+        if (string_cpy[i] == '/') {
+            // In case of "//" in the filepath, skip first slash.
+            if (string_cpy[i + 1] == '/') {
+                continue;
+            }
+            else if (memcmp(&string_cpy[i], "/../", 4) == 0) {
+                path_truncate(path, i); // Remove the last directory that was added to the output string
+                i += 2; // Skip over the "/.."
+                continue;
+            }
+            else if (memcmp(&string_cpy[i], "/./", 3) == 0) {
+                i++; // Skip over the "/."
+                continue;
+            }
         }
         // Append string_cpy[i] to the output path.
         strncat(path, &string_cpy[i], 1);

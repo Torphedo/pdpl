@@ -14,6 +14,10 @@ typedef HANDLE (*CREATE_FILE_2)(LPCWSTR, DWORD, DWORD, DWORD, LPCREATEFILE2_EXTE
 CREATE_FILE_2 original_CreateFile2 = NULL;
 CREATE_FILE_2 addr_CreateFile2 = NULL;
 
+typedef WINBOOL (*READ_FILE)(HANDLE, LPVOID, DWORD, LPDWORD, LPOVERLAPPED);
+READ_FILE addr_ReadFile = NULL;
+READ_FILE original_ReadFile = NULL;
+
 bool lock_filesystem = true;
 
 HANDLE hook_CreateFile2(LPCWSTR lpFileName, DWORD dwDesiredAccess, DWORD dwShareMode, DWORD dwCreationDisposition, LPCREATEFILE2_EXTENDED_PARAMETERS pCreateExParams) {
@@ -35,8 +39,12 @@ HANDLE hook_CreateFile2(LPCWSTR lpFileName, DWORD dwDesiredAccess, DWORD dwShare
     printf(": Opened %s\n", filename);
 
     if (PHYSFS_exists(filename)) {
-        printf("[File found in modded filesystem, unable to load mod files in this build]\n");
+        wchar_t wide_filename[MAX_PATH] = {0};
+        swprintf(wide_filename, MAX_PATH, L"%hs/%hs", PHYSFS_getRealDir(filename), filename);
+        wprintf(L"%ls\n", wide_filename);
+        return original_CreateFile2(wide_filename, dwDesiredAccess, dwShareMode, dwCreationDisposition, pCreateExParams);
     }
+
     return original_CreateFile2(lpFileName, dwDesiredAccess, dwShareMode, dwCreationDisposition, pCreateExParams);
 }
 
@@ -49,6 +57,11 @@ HANDLE hook_CreateFile2_stall(LPCWSTR lpFileName, DWORD dwDesiredAccess, DWORD d
     return addr_CreateFile2(lpFileName, dwDesiredAccess, dwShareMode, dwCreationDisposition, pCreateExParams);
 }
 
+WINBOOL hook_ReadFile(HANDLE hFile, LPVOID lpBuffer, DWORD nNumberOfBytesToRead, LPDWORD lpNumberOfBytesRead, LPOVERLAPPED lpOverlapped) {
+    // printf("Reading %li bytes.\n", nNumberOfBytesToRead);
+    return original_ReadFile(hFile, lpBuffer, nNumberOfBytesToRead, lpNumberOfBytesRead, lpOverlapped);
+}
+
 void hooks_unlock_filesystem() {
     if (MH_RemoveHook(addr_CreateFile2) != MH_OK) {
         printf("Failed to remove stall hook.\n");
@@ -56,7 +69,8 @@ void hooks_unlock_filesystem() {
     if (MH_CreateHook(addr_CreateFile2, &hook_CreateFile2, (void**)&original_CreateFile2) != MH_OK) {
         printf("Failed to create real hook.\n");
     }
-    MH_EnableHook(addr_CreateFile2);
+
+    MH_EnableHook(MH_ALL_HOOKS);
     lock_filesystem = false;
 }
 
@@ -72,8 +86,14 @@ bool hooks_setup_lock_files() {
     MH_Initialize();
 
     addr_CreateFile2 = get_procedure_address(L"KERNELBASE.dll", "CreateFile2");
+    addr_ReadFile = get_procedure_address(L"KERNELBASE.dll", "ReadFile");
 
     if (MH_CreateHook(addr_CreateFile2, &hook_CreateFile2_stall, (void**)&original_CreateFile2) != MH_OK) {
+        printf("Failed to create hook.\n");
+        return false;
+    }
+
+    if (MH_CreateHook(addr_ReadFile, &hook_ReadFile, (void**)&original_ReadFile) != MH_OK) {
         printf("Failed to create hook.\n");
         return false;
     }
