@@ -73,7 +73,7 @@ void path_make_physfs_friendly(char* path) {
     for(uint16_t i = 0; i < MAX_PATH; i++) {
         if (string_cpy[i] == '/') {
             // In case of "//" in the filepath, skip first slash.
-            if (string_cpy[i + 1] == '/') {
+            if (i < MAX_PATH && string_cpy[i + 1] == '/') {
                 continue;
             }
             else if (memcmp(&string_cpy[i], "/../", 4) == 0) {
@@ -86,7 +86,7 @@ void path_make_physfs_friendly(char* path) {
                 continue;
             }
         }
-        // Append string_cpy[i] to the output path.
-        strncat(path, &string_cpy[i], 1);
+        // Write the current character to the output path.
+        path[i] = string_cpy[i];
     }
 }
