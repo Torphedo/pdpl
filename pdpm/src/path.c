@@ -8,24 +8,21 @@
 #include "path.h"
 
 void get_ms_esper_path(char* string) {
-    if (SHGetFolderPathA(0, CSIDL_LOCAL_APPDATA, NULL, 0, string) == S_OK) {
-        uint16_t length = strlen(string); // Remove the "AC" folder name from the end of the path.
-        string[length - 1] = 0;
-        string[length - 2] = 0;
-        strcat(string, "RoamingState\\");
+    static char ms_esper_path[MAX_PATH] = {0};
+    static uint32_t path_length = 0;
+
+    // Only get the path if it's empty
+    if (ms_esper_path[0] == 0) {
+        if (SHGetFolderPathA(0, CSIDL_LOCAL_APPDATA, NULL, 0, ms_esper_path) == S_OK) {
+            path_length = strlen(ms_esper_path);
+            // Remove the "AC" from the end of the path
+            memset(&ms_esper_path[path_length - 2], 0, 2);
+            // Add "RoamingState\" to the end
+            strncat(ms_esper_path, "RoamingState\\", sizeof("RoamingState\\") - 1);
+            path_length += sizeof("RoamingState\\") - 1;
+        }
     }
-}
-
-bool path_is_plugin_folder(const char* path) {
-    uint16_t pos = strlen(path) - 2; // Skip over trailing slash
-
-    pos = path_pos_next_folder(path, pos);
-    bool plugins = (strncmp(&path[pos + 2], "plugins", sizeof("plugins") - 1) == 0);
-
-    pos = path_pos_next_folder(path, pos);
-    bool mods = (strncmp(&path[pos + 2], "mods", sizeof("mods") - 1) == 0);
-
-    return plugins && mods;
+    strncpy(string, ms_esper_path, path_length);
 }
 
 bool path_has_extension(const char* path, const char* extension) {
@@ -49,23 +46,20 @@ void path_fix_backslashes(char* path) {
     }
 }
 
-uint16_t path_pos_next_folder(const char* path, uint16_t start_pos) {
-    uint16_t pos = start_pos;
-    if (pos == 0) {
-        return pos;
-    }
-
-    while(path[pos] != '\\' && path[pos] != '/') {
-        pos--;
-    }
-    return pos - 1;
-}
-
 void path_truncate(char* path, uint16_t pos) {
     path[--pos] = 0; // Removes last character to take care of trailing "\\" or "/".
     while(path[pos] != '\\' && path[pos] != '/') {
         path[pos--] = 0;
     }
+}
+
+void path_get_filename(const char* path, char* output) {
+    uint16_t pos = strlen(path);
+    while(path[pos] != '\\' && path[pos] != '/') {
+        pos--;
+    }
+    strcpy(output, &path[pos] + 1);
+
 }
 
 void path_make_physfs_friendly(char* path) {
@@ -77,11 +71,6 @@ void path_make_physfs_friendly(char* path) {
     // Make all directory separators into '/'
     path_fix_backslashes(string_cpy);
     for(uint16_t i = 0; i < MAX_PATH; i++) {
-        // saveoptions.ini is in the UWP RoamingState folder, it's easier to just search for it and replace it entirely.
-        if (memcmp(&string_cpy[strlen(string_cpy) - sizeof("saveoptions.ini") + 1], "saveoptions.ini", sizeof("saveoptions.ini")) == 0) {
-            sprintf(path, "/Assets/Data/saveoptions.ini");
-            break;
-        }
         if (string_cpy[i] == '/') {
             // In case of "//" in the filepath, skip first slash.
             if (string_cpy[i + 1] == '/') {
