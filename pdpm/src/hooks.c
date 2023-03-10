@@ -1,6 +1,6 @@
 #include <stdio.h>
 
-// Allow use of LPCREATEFILE2_EXTENDED_PARAMETERS
+// Allow use of LPCREATEFILE2_EXTENDED_PARAMETERS on MinGW
 #define _WIN32_WINNT 0x0603
 
 #include <fileapi.h>
@@ -30,7 +30,7 @@ typedef HANDLE (*CREATE_FILE_2)(LPCWSTR, DWORD, DWORD, DWORD, LPCREATEFILE2_EXTE
 CREATE_FILE_2 original_CreateFile2 = NULL;
 CREATE_FILE_2 addr_CreateFile2 = NULL;
 
-typedef WINBOOL (*READ_FILE)(HANDLE, LPVOID, DWORD, LPDWORD, LPOVERLAPPED);
+typedef int (*READ_FILE)(HANDLE, LPVOID, DWORD, LPDWORD, LPOVERLAPPED);
 READ_FILE addr_ReadFile = NULL;
 READ_FILE original_ReadFile = NULL;
 
@@ -81,7 +81,7 @@ HANDLE hook_CreateFile2(LPCWSTR lpFileName, DWORD dwDesiredAccess, DWORD dwShare
     }
     printf(" Opened %s\n", path);
 
-    if (PHYSFS_exists(path) != EXIT_SUCCESS && handles.win_handle == INVALID_HANDLE_VALUE) {
+    if (PHYSFS_exists(path) && handles.win_handle == INVALID_HANDLE_VALUE) {
         printf("Creating a fake file for Windows handle.\n");
         system("pause");
         static char fake_path[MAX_PATH] = {0};
@@ -127,35 +127,30 @@ HANDLE hook_CreateFile2_stall(LPCWSTR lpFileName, DWORD dwDesiredAccess, DWORD d
     return addr_CreateFile2(lpFileName, dwDesiredAccess, dwShareMode, dwCreationDisposition, pCreateExParams);
 }
 
-WINBOOL hook_ReadFile(HANDLE hFile, LPVOID lpBuffer, DWORD nNumberOfBytesToRead, LPDWORD lpNumberOfBytesRead, LPOVERLAPPED lpOverlapped) {
+int hook_ReadFile(HANDLE hFile, LPVOID lpBuffer, DWORD nNumberOfBytesToRead, LPDWORD lpNumberOfBytesRead, LPOVERLAPPED lpOverlapped) {
+    static bool lock_async_calls = false;
+    while (lock_async_calls) {
+        Sleep(1);
+    }
+    lock_async_calls = true;
+
     file_handle handles = {0};
     for (uint32_t i = 0; i < handle_list_pos; i++) {
         if (hFile == handle_list[i].win_handle) {
            handles = handle_list[i];
         }
     }
+    int result = original_ReadFile(hFile, lpBuffer, nNumberOfBytesToRead, lpNumberOfBytesRead, lpOverlapped);
 
-    if (lpOverlapped != NULL) {
-        // printf("ReadFile(): Caller is using an overlapped structure.\n");
-    }
-
-    if (false) {
-        // printf("PhysicsFS handle was %p.\n", handles.physfs_handle);
-        // printf("Windows handle was %p.\n", handles.win_handle);
-        if (handles.physfs_handle != NULL && lpOverlapped == NULL) {
-            // printf("Reading from PhysicsFS handle.\n");
-            *lpNumberOfBytesRead = PHYSFS_readBytes(handles.physfs_handle, lpBuffer, nNumberOfBytesToRead);
-
-            int64_t seek_return = SetFilePointer(hFile, (long) *lpNumberOfBytesRead, NULL, FILE_CURRENT);
-
-            if (seek_return == INVALID_SET_FILE_POINTER || seek_return == ERROR_NEGATIVE_SEEK) {
-                printf("\n\nFile seek error.\n\n");
-            }
-            return (*lpNumberOfBytesRead == 0);
+    if (handles.physfs_handle != NULL) {
+        if (lpOverlapped != NULL) {
+            PHYSFS_seek(handles.physfs_handle, (uint64_t) lpOverlapped->Offset | (uint64_t) lpOverlapped->OffsetHigh);
         }
+        // PHYSFS_readBytes(handles.physfs_handle, lpBuffer, nNumberOfBytesToRead);
     }
-    // printf("Reading from Windows handle.\n");
-    return original_ReadFile(hFile, lpBuffer, nNumberOfBytesToRead, lpNumberOfBytesRead, lpOverlapped);
+
+    lock_async_calls = false; // Allow waiting call to run.
+    return result;
 }
 
 void hooks_unlock_filesystem() {
