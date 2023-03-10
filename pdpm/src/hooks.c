@@ -9,6 +9,22 @@
 
 #include "hooks.h"
 #include "path.h"
+#include "atomic_log.h"
+
+// These are both void*
+typedef struct {
+    PHYSFS_File* physfs_handle;
+    HANDLE win_handle;
+}file_handle;
+
+// Stores pairs of PhysicsFS and Windows file handles.
+// Enough for the game to open 32,768 files at once. There are roughly 3,800 files in the game.
+static file_handle handle_list[0x8000] = {0};
+static uint16_t handle_list_pos = 0;
+// Stores which handle pairs are free to be overwritten (by index). When a handle is closed, it's added to this list and the handle pair is set to NULL.
+// When a free handle pair is overwritten, its entry in this list is set to 0xFFFF. The list should be initialized to 0xFFFF.
+static uint16_t* free_list = NULL;
+static uint16_t free_count = 0;
 
 typedef HANDLE (*CREATE_FILE_2)(LPCWSTR, DWORD, DWORD, DWORD, LPCREATEFILE2_EXTENDED_PARAMETERS);
 CREATE_FILE_2 original_CreateFile2 = NULL;
@@ -21,31 +37,85 @@ READ_FILE original_ReadFile = NULL;
 bool lock_filesystem = true;
 
 HANDLE hook_CreateFile2(LPCWSTR lpFileName, DWORD dwDesiredAccess, DWORD dwShareMode, DWORD dwCreationDisposition, LPCREATEFILE2_EXTENDED_PARAMETERS pCreateExParams) {
-    char filename[MAX_PATH] = {0};
-    PHYSFS_utf8FromUtf16(lpFileName, filename, MAX_PATH);
-    path_make_physfs_friendly(filename);
+    // During startup, it seems that this function is sometimes called asynchronously. This value is shared across
+    // each of these running instances, so while the function is running it will force other instances of the call to wait.
+    static bool lock_async_calls = false;
+    while (lock_async_calls) {
+        Sleep(1);
+    }
+    lock_async_calls = true;
 
+    char path[MAX_PATH] = {0};
+    wchar_t wide_path[MAX_PATH] = {0};
+    PHYSFS_utf8FromUtf16(lpFileName, path, MAX_PATH);
+    path_make_physfs_friendly(path);
+
+    static file_handle handles = {0};
+
+    if (PHYSFS_exists(path)) {
+        // Get the real path of the file and place it in a wide string.
+        swprintf(wide_path, MAX_PATH, L"%hs/%hs", PHYSFS_getRealDir(path), path);
+        handles.win_handle = original_CreateFile2(wide_path, dwDesiredAccess, dwShareMode, dwCreationDisposition, pCreateExParams);
+    }
+    else {
+        handles.win_handle = original_CreateFile2(lpFileName, dwDesiredAccess, dwShareMode, dwCreationDisposition, pCreateExParams);
+    }
+
+    MH_DisableHook(addr_CreateFile2);
     printf("CreateFile2() ");
+    switch(dwDesiredAccess) {
+        case GENERIC_READ:
+            printf("[\033[32mGENERIC_READ\033[0m]:");
+            handles.physfs_handle = PHYSFS_openRead(path);
+            break;
+        case GENERIC_WRITE:
+            printf("[\033[31mGENERIC_WRITE\033[0m]:");
+            handles.physfs_handle = PHYSFS_openWrite(path);
+            break;
+        case (GENERIC_READ | GENERIC_WRITE):
+            printf("[\033[33mGENERIC_READ | GENERIC_WRITE\033[0m]:");
+            handles.physfs_handle = PHYSFS_openWrite(path);
+            break;
+        default:
+            printf("[UNKNOWN]:");
+    }
+    printf(" Opened %s\n", path);
 
-    if (dwDesiredAccess == GENERIC_READ) {
-        printf("[\033[32mGENERIC_READ\033[0m]");
-    }
-    else if (dwDesiredAccess == GENERIC_WRITE) {
-        printf("[\033[31mGENERIC_WRITE\033[0m]");
-    }
-    else if (dwDesiredAccess == (GENERIC_READ | GENERIC_WRITE)) {
-        printf("[\033[33mGENERIC_READ | GENERIC_WRITE\033[0m]");
-    }
-    printf(": Opened %s\n", filename);
+    if (PHYSFS_exists(path) != EXIT_SUCCESS && handles.win_handle == INVALID_HANDLE_VALUE) {
+        printf("Creating a fake file for Windows handle.\n");
+        system("pause");
+        static char fake_path[MAX_PATH] = {0};
+        get_ms_esper_path(fake_path);
+        {
+            static char filename[MAX_PATH] = {0}; // Temporary buffer to store filename
+            path_get_filename(path, filename);
+            sprintf(fake_path, "%sfake\\%s", fake_path, filename);
+        }
 
-    if (PHYSFS_exists(filename)) {
-        wchar_t wide_filename[MAX_PATH] = {0};
-        swprintf(wide_filename, MAX_PATH, L"%hs/%hs", PHYSFS_getRealDir(filename), filename);
-        wprintf(L"%ls\n", wide_filename);
-        return original_CreateFile2(wide_filename, dwDesiredAccess, dwShareMode, dwCreationDisposition, pCreateExParams);
+        // Create a new file with the appropriate size in the /fake/ folder.
+        FILE* fake_file = fopen(fake_path, "wb");
+        fseek(fake_file, PHYSFS_fileLength(handles.physfs_handle), SEEK_SET);
+        fwrite("\0", sizeof("\0"), 1, fake_file);
+        fclose(fake_file);
+
+        PHYSFS_utf8ToUtf16(fake_path, wide_path, MAX_PATH);
+        handles.win_handle = original_CreateFile2(wide_path, dwDesiredAccess, dwShareMode, dwCreationDisposition, pCreateExParams);
+        printf("PhysicsFS handle was %p.\n", handles.physfs_handle);
     }
 
-    return original_CreateFile2(lpFileName, dwDesiredAccess, dwShareMode, dwCreationDisposition, pCreateExParams);
+    MH_EnableHook(addr_CreateFile2);
+
+    if (free_count == 0) {
+        // Insert new entry in handle list and increment position
+        handle_list[handle_list_pos++] = handles;
+    }
+    else {
+        uint16_t index = free_list[--free_count];
+        free_list[free_count] = 0xFFFF;
+        handle_list[index] = handles;
+    }
+    lock_async_calls = false; // Allow waiting call to run.
+    return handles.win_handle;
 }
 
 // Stalls until filesystem access is unlocked, then tries to call the original function (which now redirects to hook_CreateFile2()).
@@ -58,11 +128,38 @@ HANDLE hook_CreateFile2_stall(LPCWSTR lpFileName, DWORD dwDesiredAccess, DWORD d
 }
 
 WINBOOL hook_ReadFile(HANDLE hFile, LPVOID lpBuffer, DWORD nNumberOfBytesToRead, LPDWORD lpNumberOfBytesRead, LPOVERLAPPED lpOverlapped) {
-    // printf("Reading %li bytes.\n", nNumberOfBytesToRead);
+    file_handle handles = {0};
+    for (uint32_t i = 0; i < handle_list_pos; i++) {
+        if (hFile == handle_list[i].win_handle) {
+           handles = handle_list[i];
+        }
+    }
+
+    if (lpOverlapped != NULL) {
+        // printf("ReadFile(): Caller is using an overlapped structure.\n");
+    }
+
+    if (false) {
+        // printf("PhysicsFS handle was %p.\n", handles.physfs_handle);
+        // printf("Windows handle was %p.\n", handles.win_handle);
+        if (handles.physfs_handle != NULL && lpOverlapped == NULL) {
+            // printf("Reading from PhysicsFS handle.\n");
+            *lpNumberOfBytesRead = PHYSFS_readBytes(handles.physfs_handle, lpBuffer, nNumberOfBytesToRead);
+
+            int64_t seek_return = SetFilePointer(hFile, (long) *lpNumberOfBytesRead, NULL, FILE_CURRENT);
+
+            if (seek_return == INVALID_SET_FILE_POINTER || seek_return == ERROR_NEGATIVE_SEEK) {
+                printf("\n\nFile seek error.\n\n");
+            }
+            return (*lpNumberOfBytesRead == 0);
+        }
+    }
+    // printf("Reading from Windows handle.\n");
     return original_ReadFile(hFile, lpBuffer, nNumberOfBytesToRead, lpNumberOfBytesRead, lpOverlapped);
 }
 
 void hooks_unlock_filesystem() {
+    atomic_log("\n\n=== Phantom Dust Plugin Manager ===\n\nStarted virtual filesystem.\n", "plugin_manager.log");
     if (MH_RemoveHook(addr_CreateFile2) != MH_OK) {
         printf("Failed to remove stall hook.\n");
     }
