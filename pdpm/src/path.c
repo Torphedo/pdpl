@@ -1,7 +1,6 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <string.h>
-#include <stdio.h>
 
 #include <shlobj.h>
 
@@ -73,7 +72,7 @@ void path_make_physfs_friendly(char* path) {
     for(uint16_t i = 0; i < MAX_PATH; i++) {
         if (string_cpy[i] == '/') {
             // In case of "//" in the filepath, skip first slash.
-            if (i < MAX_PATH && string_cpy[i + 1] == '/') {
+            if (string_cpy[i + 1] == '/') {
                 continue;
             }
             else if (memcmp(&string_cpy[i], "/../", 4) == 0) {
@@ -86,7 +85,8 @@ void path_make_physfs_friendly(char* path) {
                 continue;
             }
         }
-        // Write the current character to the output path.
-        path[i] = string_cpy[i];
+        // Write the current character to the output path. strncat() is used because skipping over a character
+        // and simply writing to the current position in the target string leaves behind null terminators.
+        strncat(path, &string_cpy[i], 1);
     }
 }
