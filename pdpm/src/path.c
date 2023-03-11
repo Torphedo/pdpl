@@ -3,6 +3,7 @@
 #include <string.h>
 
 #include <shlobj.h>
+#include <stdio.h>
 
 #include "path.h"
 
@@ -64,11 +65,18 @@ void path_get_filename(const char* path, char* output) {
 void path_make_physfs_friendly(char* path) {
     // Copy string to a new buffer
     char string_cpy[MAX_PATH] = {0};
+    path_fix_backslashes(path);
+
+    // Handle drive letters in the middle of paths like "/Assets/Data/t:/charaselparam"
+    char drive_letter = 0;
+    if(sscanf(path, "Assets/Data/%c:/%s", &drive_letter, string_cpy) > 1) {
+        sprintf(path, "/%c/%s", drive_letter, string_cpy);
+        return;
+    }
+
     strncpy(string_cpy, path, MAX_PATH);
     memset(path, 0, MAX_PATH); // Delete input string
 
-    // Make all directory separators into '/'
-    path_fix_backslashes(string_cpy);
     for(uint16_t i = 0; i < MAX_PATH; i++) {
         if (string_cpy[i] == '/') {
             // In case of "//" in the filepath, skip first slash.
