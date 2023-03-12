@@ -48,7 +48,7 @@ void __stdcall injected(HMODULE dll_handle) {
 	FreeLibraryAndExitThread((HMODULE)(dll_handle), EXIT_SUCCESS);
 }
 
-int32_t __stdcall DllMain(HINSTANCE dll_handle, uint32_t reason, void* reserved)
+__declspec(dllexport) int32_t __stdcall DllMain(HINSTANCE dll_handle, uint32_t reason, void* reserved)
 {
 	if (reason == DLL_PROCESS_ATTACH)
 	{

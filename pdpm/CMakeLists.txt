@@ -8,7 +8,7 @@ add_library(pdpm SHARED
 	"src/injection.c"
 )
 
-target_link_libraries(pdpm PRIVATE minhook physfs-static MemoryModule)
+target_link_libraries(pdpm PRIVATE "-s" minhook physfs-static MemoryModule)
 target_include_directories(pdpm PRIVATE "../ext/minhook/include" "../ext/physfs/src" "../ext/MemoryModule")
 
 # This auto-generates the "pdpm.sha512" and "pdpm.md5" files in "inject/hash/" so that they're updated each build
