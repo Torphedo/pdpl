@@ -34,7 +34,15 @@ typedef int (*READ_FILE)(HANDLE, LPVOID, DWORD, LPDWORD, LPOVERLAPPED);
 READ_FILE addr_ReadFile = NULL;
 READ_FILE original_ReadFile = NULL;
 
+// This function gets run whenever you start trying to search for a multiplayer lobby.
+typedef void (*CHECK_VERSION)(void);
+CHECK_VERSION addr_check_version = NULL;
+CHECK_VERSION original_check_version = NULL;
+
 bool lock_filesystem = true;
+
+// The base address of "PDUWP.exe" in memory, stored here so that we don't need to get it again every time
+static uintptr_t pduwp = 0;
 
 HANDLE hook_CreateFile2(LPCWSTR lpFileName, DWORD dwDesiredAccess, DWORD dwShareMode, DWORD dwCreationDisposition, LPCREATEFILE2_EXTENDED_PARAMETERS pCreateExParams) {
     // During startup, it seems that this function is sometimes called asynchronously. This value is shared across
@@ -174,6 +182,14 @@ void* get_procedure_address(const wchar_t* module_name, const char* proc_name) {
     return GetProcAddress(hModule, proc_name);
 }
 
+void hook_check_version(void) {
+    uint32_t* version_number = (uint32_t*)(uintptr_t)(pduwp + 0x4C5250);
+    if (*version_number <= 140) {
+        *version_number = 0;
+    }
+    return original_check_version();
+}
+
 bool hooks_setup_lock_files() {
     MH_Initialize();
 
@@ -194,5 +210,11 @@ bool hooks_setup_lock_files() {
         printf("Failed to enable hook.\n");
         return false;
     }
+
+    pduwp = (uintptr_t) GetModuleHandleA("PDUWP.exe");
+    addr_check_version = (void*)(uintptr_t)(pduwp + 0x1826B0);
+    MH_CreateHook(addr_check_version, &hook_check_version, (void**)&original_check_version);
+    MH_EnableHook(addr_check_version);
+
     return true;
 }

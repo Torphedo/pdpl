@@ -35,7 +35,8 @@ void __stdcall injected(HMODULE dll_handle) {
     uint32_t* version_number = (uint32_t*)(uintptr_t)(esper_base + 0x4C5250);
 
 	while (true) {
-        if (*version_number <= 140 && *version_number != 0) {
+        // The version number is also reset like this whenever the game tries to check it.
+        if (*version_number <= 140) {
             *version_number = 0;
         }
 		Sleep(1);
