@@ -15,6 +15,7 @@
 #include "path.h"
 #include "hooks.h"
 #include "filesystem.h"
+#include "injection.h"
 
 static const char plugin_manager_msg[] = "[\033[32mPlugin Manager\033[0m]";
 
@@ -26,7 +27,7 @@ void __stdcall injected(HMODULE dll_handle) {
     hooks_setup_lock_files();
     vfs_setup();
 
-    // Inject plugin DLL here.
+    inject_plugins();
 
     printf("%s: Finished startup. Welcome to Phantom Dust Plugin Manager.\n\n", plugin_manager_msg);
 

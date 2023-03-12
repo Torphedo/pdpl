@@ -5,6 +5,7 @@ add_library(pdpm SHARED
 	"src/path.c"
 	"src/filesystem.c"
 	"src/atomic_log.c"
+	"src/injection.c"
 )
 
 target_link_libraries(pdpm PRIVATE minhook physfs-static)
