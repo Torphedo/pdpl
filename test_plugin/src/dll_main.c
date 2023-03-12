@@ -17,15 +17,8 @@ void __stdcall plugin_main(HMODULE dll_handle) {
 	const uint8_t* gsdata = (client + 0x4C5240);
 
 	while (!GetAsyncKeyState(VK_END)) {
-		Sleep(1000);
-		if (gsdata[0x10] == 0) {
-            printf("plugin: Set version number to 1.40.\n");
-			*(uint32_t*)&gsdata[0x10] = 140;
-		}
-		else {
-            printf("plugin: Set version number to 0.00.\n");
-			*(uint32_t*)&gsdata[0x10] = 0;
-		}
+		Sleep(1);
+        *(uint32_t*)&gsdata[0x10] = 140;
 	}
 
 	// Uninject
