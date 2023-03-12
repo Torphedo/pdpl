@@ -27,9 +27,9 @@ void __stdcall injected(HMODULE dll_handle) {
     hooks_setup_lock_files();
     vfs_setup();
 
-    inject_plugins();
-
     printf("%s: Finished startup. Welcome to Phantom Dust Plugin Manager.\n\n", plugin_manager_msg);
+
+    inject_plugins();
 
 	while (true) {
 		Sleep(1000);

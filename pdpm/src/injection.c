@@ -9,12 +9,17 @@
 #include <Windows.h>
 
 #include <physfs.h>
+#include <MemoryModule.h>
 
 #include "path.h"
 #include "injection.h"
 
 static const char injector_msg[] = "[\033[32mPlugin Injector\033[0m]";
 static const char injector_err[] = "[\033[31mPlugin Injector\033[0m]";
+
+void manual_load_library(uint8_t* module_data) {
+
+}
 
 void inject_plugins() {
     static const char* dir = "/plugins/";
@@ -26,18 +31,18 @@ void inject_plugins() {
 
             // Get full virtual filesystem path.
             sprintf(full_path, "%s%s", dir, *i);
-            const char* real_path = PHYSFS_getRealDir(full_path);
 
-            if (path_has_extension(real_path, ".zip") || path_has_extension(real_path, ".7z")) {
-                printf("%s: Plugins in zip archives are currently unsupported. Skipping %s...\n", injector_err, *i);
-                continue;
+            PHYSFS_File* dll_file = PHYSFS_openRead(full_path);
+            if (dll_file != NULL) {
+                int64_t filesize = PHYSFS_fileLength(dll_file);
+                uint8_t* plugin_data = calloc(1, filesize);
+                if (plugin_data != NULL) {
+                    PHYSFS_readBytes(dll_file, plugin_data, filesize);
+                    MemoryLoadLibrary(plugin_data, filesize);
+                }
             }
 
-            // Real search path + / or \ + filename
-            sprintf(full_path, "%s\\plugins\\%s", real_path, *i);
-
             printf("%s: Injecting %s.\n", injector_msg, *i);
-            LoadLibraryA(full_path);
         }
     }
     PHYSFS_freeList(file_list);
