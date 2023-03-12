@@ -39,6 +39,12 @@ typedef void (*CHECK_VERSION)(void);
 CHECK_VERSION addr_check_version = NULL;
 CHECK_VERSION original_check_version = NULL;
 
+// This function appears to broadcast the version number (and maybe other info) whenever you create or change
+// your lobby's settings. (needs confirmation / testing)
+typedef void (*CHECK_VERSION_CREATE)(void*, int);
+CHECK_VERSION_CREATE addr_check_version_create = NULL;
+CHECK_VERSION_CREATE original_check_version_create = NULL;
+
 bool lock_filesystem = true;
 
 // The base address of "PDUWP.exe" in memory, stored here so that we don't need to get it again every time
@@ -162,7 +168,7 @@ int hook_ReadFile(HANDLE hFile, LPVOID lpBuffer, DWORD nNumberOfBytesToRead, LPD
 }
 
 void hooks_unlock_filesystem() {
-    atomic_log("\n\n=== Phantom Dust Plugin Manager ===\n\nStarted virtual filesystem.\n", "plugin_manager.log");
+    // atomic_log("\n\n=== Phantom Dust Plugin Manager ===\n\nStarted virtual filesystem.\n", "plugin_manager.log");
     if (MH_RemoveHook(addr_CreateFile2) != MH_OK) {
         printf("Failed to remove stall hook.\n");
     }
@@ -190,6 +196,14 @@ void hook_check_version(void) {
     return original_check_version();
 }
 
+void hook_check_version_create(void* unknown_ptr, int unknown_int) {
+    uint32_t* version_number = (uint32_t*)(uintptr_t)(pduwp + 0x4C5250);
+    if (*version_number <= 140) {
+        *version_number = 0;
+    }
+    return original_check_version_create(unknown_ptr, unknown_int);
+}
+
 bool hooks_setup_lock_files() {
     MH_Initialize();
 
@@ -215,6 +229,10 @@ bool hooks_setup_lock_files() {
     addr_check_version = (void*)(uintptr_t)(pduwp + 0x1826B0);
     MH_CreateHook(addr_check_version, &hook_check_version, (void**)&original_check_version);
     MH_EnableHook(addr_check_version);
+
+    addr_check_version_create = (void*)(uintptr_t)(pduwp + 0x182B60);
+    MH_CreateHook(addr_check_version_create, &hook_check_version_create, (void**)&original_check_version_create);
+    MH_EnableHook(addr_check_version_create);
 
     return true;
 }
