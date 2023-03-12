@@ -24,6 +24,6 @@ set(PHYSFS_ARCHIVE_ISO9660 FALSE)
 add_subdirectory(ext/physfs)
 add_subdirectory(ext/minhook)
 
+add_subdirectory(pdpm)
 add_subdirectory(inject)
 add_subdirectory(test_plugin)
-add_subdirectory(pdpm)
