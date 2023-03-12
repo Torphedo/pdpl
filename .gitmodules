@@ -4,3 +4,6 @@
 [submodule "ext/physfs"]
 	path = ext/physfs
 	url = https://github.com/icculus/physfs
+[submodule "ext/sphlib"]
+	path = ext/sphlib
+	url = https://github.com/pornin/sphlib
