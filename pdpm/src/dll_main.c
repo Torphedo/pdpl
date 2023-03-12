@@ -31,8 +31,14 @@ void __stdcall injected(HMODULE dll_handle) {
 
     inject_plugins();
 
+    const uintptr_t esper_base = (uintptr_t) GetModuleHandleA("PDUWP.exe");
+    uint32_t* version_number = (uint32_t*)(uintptr_t)(esper_base + 0x4C5250);
+
 	while (true) {
-		Sleep(1000);
+        if (*version_number <= 140 && *version_number != 0) {
+            *version_number = 0;
+        }
+		Sleep(1);
 	}
 
     PHYSFS_deinit();
