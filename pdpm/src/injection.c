@@ -14,8 +14,7 @@
 #include "path.h"
 #include "injection.h"
 
-static const char injector_msg[] = "[\033[32mPlugin Injector\033[0m]";
-static const char injector_err[] = "[\033[31mPlugin Injector\033[0m]";
+static const char injector_msg[] = "[\033[32mPlugin Loader\033[0m]";
 
 void manual_load_library(uint8_t* module_data) {
 
