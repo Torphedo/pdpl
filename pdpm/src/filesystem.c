@@ -75,5 +75,4 @@ void vfs_setup() {
 
     printf("%s: Finished setting up.\n", vfs_msg);
     printf("%s: Unlocking files for read/write...\n\n", vfs_msg);
-    hooks_unlock_filesystem();
 }

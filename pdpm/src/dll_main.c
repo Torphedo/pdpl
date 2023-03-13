@@ -30,6 +30,7 @@ void __stdcall injected(HMODULE dll_handle) {
     printf("%s: Finished startup. Welcome to Phantom Dust Plugin Manager.\n\n", plugin_manager_msg);
 
     inject_plugins();
+    hooks_unlock_filesystem();
 
     const uintptr_t esper_base = (uintptr_t) GetModuleHandleA("PDUWP.exe");
     uint32_t* version_number = (uint32_t*)(uintptr_t)(esper_base + 0x4C5250);
