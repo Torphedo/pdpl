@@ -132,6 +132,21 @@ HANDLE hook_CreateFile2(LPCWSTR lpFileName, DWORD dwDesiredAccess, DWORD dwShare
     return handles.win_handle;
 }
 
+typedef FILE* (*FOPEN)(const char* path, const char* mode);
+FOPEN addr_fopen = NULL;
+FOPEN original_fopen = NULL;
+FILE* hook_fopen(const char* path, const char* mode) {
+    char virtual_path[MAX_PATH] = {0};
+    if (PHYSFS_exists(path)) {
+        // Get the real path of the file and place it in a wide string.
+        sprintf(virtual_path,  "%s\\%s", PHYSFS_getRealDir(path), path);
+        return original_fopen(virtual_path, mode);
+    }
+    else {
+        return original_fopen(path, mode);
+    }
+}
+
 // Stalls until filesystem access is unlocked, then tries to call the original function (which now redirects to hook_CreateFile2()).
 HANDLE hook_CreateFile2_stall(LPCWSTR lpFileName, DWORD dwDesiredAccess, DWORD dwShareMode, DWORD dwCreationDisposition, LPCREATEFILE2_EXTENDED_PARAMETERS pCreateExParams) {
     while(lock_filesystem) {
@@ -209,6 +224,7 @@ bool hooks_setup_lock_files() {
 
     addr_CreateFile2 = get_procedure_address(L"KERNELBASE.dll", "CreateFile2");
     addr_ReadFile = get_procedure_address(L"KERNELBASE.dll", "ReadFile");
+    addr_fopen = get_procedure_address(L"msvcrt.dll", "fopen");
 
     if (MH_CreateHook(addr_CreateFile2, &hook_CreateFile2_stall, (void**)&original_CreateFile2) != MH_OK) {
         printf("Failed to create hook.\n");
@@ -223,6 +239,13 @@ bool hooks_setup_lock_files() {
     if (MH_EnableHook(addr_CreateFile2) != MH_OK) {
         printf("Failed to enable hook.\n");
         return false;
+    }
+
+    if (MH_CreateHook(addr_fopen, &hook_fopen, (void**)&original_fopen) != MH_OK) {
+        printf("Failed to create hook for fopen().\n");
+    }
+    if(MH_EnableHook(addr_fopen) != MH_OK) {
+        printf("Failed to enable hook for fopen().\n");
     }
 
     pduwp = (uintptr_t) GetModuleHandleA("PDUWP.exe");
