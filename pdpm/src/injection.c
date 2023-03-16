@@ -16,10 +16,6 @@
 
 static const char injector_msg[] = "[\033[32mPlugin Loader\033[0m]";
 
-void manual_load_library(uint8_t* module_data) {
-
-}
-
 void inject_plugins() {
     static const char* dir = "/plugins/";
     char** file_list = PHYSFS_enumerateFiles(dir);
