@@ -13,8 +13,9 @@ typedef struct {
     int64_t (*PHYSFS_fileLength)(void* handle);
     int64_t (*PHYSFS_tell)(void* handle);
     int32_t (*PHYSFS_seek)(void* handle, uint64_t pos);
+    int (*PHYSFS_close)(void* handle);
 }plugin_api;
 
-typedef int (*PLUGINMAIN)(void* dll_handle, void* exposed_functions);
+typedef int (*PLUGINMAIN)(void* dll_handle, const plugin_api* exposed_functions);
 
 void inject_plugins();

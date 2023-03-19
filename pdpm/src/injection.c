@@ -28,7 +28,8 @@ const plugin_api api = {
         .PHYSFS_writeBytes = (int64_t (*)(void *, const void *, uint64_t)) PHYSFS_writeBytes,
         .PHYSFS_fileLength = (int64_t (*)(void *)) PHYSFS_fileLength,
         .PHYSFS_tell       = (int64_t (*)(void *)) PHYSFS_tell,
-        .PHYSFS_seek       = (int32_t (*)(void *, uint64_t)) PHYSFS_seek
+        .PHYSFS_seek       = (int32_t (*)(void *, uint64_t)) PHYSFS_seek,
+        .PHYSFS_close      = (int (*)(void *)) PHYSFS_close
 };
 
 void inject_plugins() {
