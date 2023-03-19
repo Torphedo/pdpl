@@ -20,16 +20,16 @@ static const char injector_warn[] = "[\033[33mPlugin Loader\033[0m]";
 // This casting is really annoying, but it will just throw errors about the slightly different types if I don't.
 const plugin_api api = {
         .plugin_cleanup    = MemoryFreeLibrary,
-        .PHYSFS_exists     = (bool (*)(const char *)) PHYSFS_exists,
-        .PHYSFS_openRead   = (void *(*)(const char *)) PHYSFS_openRead,
-        .PHYSFS_openWrite  = (void *(*)(const char *)) PHYSFS_openWrite,
-        .PHYSFS_openAppend = (void *(*)(const char *)) PHYSFS_openAppend,
-        .PHYSFS_readBytes  = (int64_t (*)(void *, void *, uint64_t)) PHYSFS_readBytes,
-        .PHYSFS_writeBytes = (int64_t (*)(void *, const void *, uint64_t)) PHYSFS_writeBytes,
-        .PHYSFS_fileLength = (int64_t (*)(void *)) PHYSFS_fileLength,
-        .PHYSFS_tell       = (int64_t (*)(void *)) PHYSFS_tell,
-        .PHYSFS_seek       = (int32_t (*)(void *, uint64_t)) PHYSFS_seek,
-        .PHYSFS_close      = (int (*)(void *)) PHYSFS_close
+        .PHYSFS_exists     = (bool (*)(const char*)) PHYSFS_exists,
+        .PHYSFS_openRead   = (void*(*)(const char*)) PHYSFS_openRead,
+        .PHYSFS_openWrite  = (void*(*)(const char*)) PHYSFS_openWrite,
+        .PHYSFS_openAppend = (void*(*)(const char*)) PHYSFS_openAppend,
+        .PHYSFS_readBytes  = (int64_t (*)(void*, void*, uint64_t)) PHYSFS_readBytes,
+        .PHYSFS_writeBytes = (int64_t (*)(void*, const void*, uint64_t)) PHYSFS_writeBytes,
+        .PHYSFS_fileLength = (int64_t (*)(void*)) PHYSFS_fileLength,
+        .PHYSFS_tell       = (int64_t (*)(void*)) PHYSFS_tell,
+        .PHYSFS_seek       = (int32_t (*)(void*, uint64_t)) PHYSFS_seek,
+        .PHYSFS_close      = (int (*)(void*)) PHYSFS_close
 };
 
 void inject_plugins() {
