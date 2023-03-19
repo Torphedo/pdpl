@@ -32,15 +32,6 @@ void vfs_setup() {
     PHYSFS_mkdir("mods/plugins");
     PHYSFS_mkdir("fake");
 
-    // Add mod folder to the search path
-    strcat(app_path, "mods");
-    if (PHYSFS_mount(app_path, "/", true) == 0) {
-        printf("%s: Failed to add %s to the virtual filesystem. (%s)\n", vfs_err, app_path, PHYSFS_getErrorByCode(PHYSFS_getLastErrorCode()));
-    }
-    else {
-        printf("%s: Mounted %s at root.\n", vfs_msg, app_path);
-    }
-
     // Recursive Archive Mounter
     static const char* dir = "/";
     char** file_list = PHYSFS_enumerateFiles(dir);
@@ -62,6 +53,15 @@ void vfs_setup() {
     }
     PHYSFS_freeList(file_list);
 
+    // Add mod folder to the search path
+    strcat(app_path, "mods");
+    if (PHYSFS_mount(app_path, "/", true) == 0) {
+        printf("%s: Failed to add %s to the virtual filesystem. (%s)\n", vfs_err, app_path, PHYSFS_getErrorByCode(PHYSFS_getLastErrorCode()));
+    }
+    else {
+        printf("%s: Mounted %s at root.\n", vfs_msg, app_path);
+    }
+
     memset(app_path, 0, MAX_PATH); // Clear string so there are no leftovers of the old string
     // Get path to Phantom Dust files by getting location of PDUWP.exe and truncating the filename
     GetModuleFileNameA(NULL, app_path, MAX_PATH);
@@ -69,7 +69,7 @@ void vfs_setup() {
     app_path[strlen(app_path) - 1] = 0; // Cut off trailing backslash
 
     path_fix_backslashes(app_path);
-    // Mount to root of VFS, and prepend to search path list so that it's the last resort.
+    // Mount vanilla game at root as the last resort.
     PHYSFS_mount(app_path, "/", true);
     // printf("%s: Mounting vanilla game (%s).\n", vfs_msg, app_path);
 
