@@ -9,22 +9,12 @@
 
 #include "hooks.h"
 #include "path.h"
-#include "atomic_log.h"
 
 // These are both void*
 typedef struct {
     PHYSFS_File* physfs_handle;
     HANDLE win_handle;
 }file_handle;
-
-// Stores pairs of PhysicsFS and Windows file handles.
-// Enough for the game to open 32,768 files at once. There are roughly 3,800 files in the game.
-static file_handle handle_list[0x8000] = {0};
-static uint16_t handle_list_pos = 0;
-// Stores which handle pairs are free to be overwritten (by index). When a handle is closed, it's added to this list and the handle pair is set to NULL.
-// When a free handle pair is overwritten, its entry in this list is set to 0xFFFF. The list should be initialized to 0xFFFF.
-static uint16_t* free_list = NULL;
-static uint16_t free_count = 0;
 
 typedef HANDLE (*CREATE_FILE_2)(LPCWSTR, DWORD, DWORD, DWORD, LPCREATEFILE2_EXTENDED_PARAMETERS);
 CREATE_FILE_2 original_CreateFile2 = NULL;
@@ -119,32 +109,8 @@ HANDLE hook_CreateFile2(LPCWSTR lpFileName, DWORD dwDesiredAccess, DWORD dwShare
 
     MH_EnableHook(addr_CreateFile2);
 
-    if (free_count == 0) {
-        // Insert new entry in handle list and increment position
-        handle_list[handle_list_pos++] = handles;
-    }
-    else {
-        uint16_t index = free_list[--free_count];
-        free_list[free_count] = 0xFFFF;
-        handle_list[index] = handles;
-    }
     lock_async_calls = false; // Allow waiting call to run.
     return handles.win_handle;
-}
-
-typedef FILE* (*FOPEN)(const char* path, const char* mode);
-FOPEN addr_fopen = NULL;
-FOPEN original_fopen = NULL;
-FILE* hook_fopen(const char* path, const char* mode) {
-    char virtual_path[MAX_PATH] = {0};
-    if (PHYSFS_exists(path)) {
-        // Get the real path of the file and place it in a wide string.
-        sprintf(virtual_path,  "%s\\%s", PHYSFS_getRealDir(path), path);
-        return original_fopen(virtual_path, mode);
-    }
-    else {
-        return original_fopen(path, mode);
-    }
 }
 
 // Stalls until filesystem access is unlocked, then tries to call the original function (which now redirects to hook_CreateFile2()).
@@ -156,6 +122,7 @@ HANDLE hook_CreateFile2_stall(LPCWSTR lpFileName, DWORD dwDesiredAccess, DWORD d
     return addr_CreateFile2(lpFileName, dwDesiredAccess, dwShareMode, dwCreationDisposition, pCreateExParams);
 }
 
+// Unused for now.
 int hook_ReadFile(HANDLE hFile, LPVOID lpBuffer, DWORD nNumberOfBytesToRead, LPDWORD lpNumberOfBytesRead, LPOVERLAPPED lpOverlapped) {
     static bool lock_async_calls = false;
     while (lock_async_calls) {
@@ -163,27 +130,13 @@ int hook_ReadFile(HANDLE hFile, LPVOID lpBuffer, DWORD nNumberOfBytesToRead, LPD
     }
     lock_async_calls = true;
 
-    file_handle handles = {0};
-    for (uint32_t i = 0; i < handle_list_pos; i++) {
-        if (hFile == handle_list[i].win_handle) {
-           handles = handle_list[i];
-        }
-    }
     int result = original_ReadFile(hFile, lpBuffer, nNumberOfBytesToRead, lpNumberOfBytesRead, lpOverlapped);
-
-    if (handles.physfs_handle != NULL) {
-        if (lpOverlapped != NULL) {
-            PHYSFS_seek(handles.physfs_handle, (uint64_t) lpOverlapped->Offset | (uint64_t) lpOverlapped->OffsetHigh);
-        }
-        // PHYSFS_readBytes(handles.physfs_handle, lpBuffer, nNumberOfBytesToRead);
-    }
 
     lock_async_calls = false; // Allow waiting call to run.
     return result;
 }
 
 void hooks_unlock_filesystem() {
-    // atomic_log("\n\n=== Phantom Dust Plugin Manager ===\n\nStarted virtual filesystem.\n", "plugin_manager.log");
     if (MH_RemoveHook(addr_CreateFile2) != MH_OK) {
         printf("Failed to remove stall hook.\n");
     }
@@ -224,7 +177,6 @@ bool hooks_setup_lock_files() {
 
     addr_CreateFile2 = get_procedure_address(L"KERNELBASE.dll", "CreateFile2");
     addr_ReadFile = get_procedure_address(L"KERNELBASE.dll", "ReadFile");
-    addr_fopen = get_procedure_address(L"msvcrt.dll", "fopen");
 
     if (MH_CreateHook(addr_CreateFile2, &hook_CreateFile2_stall, (void**)&original_CreateFile2) != MH_OK) {
         printf("Failed to create hook.\n");
@@ -239,13 +191,6 @@ bool hooks_setup_lock_files() {
     if (MH_EnableHook(addr_CreateFile2) != MH_OK) {
         printf("Failed to enable hook.\n");
         return false;
-    }
-
-    if (MH_CreateHook(addr_fopen, &hook_fopen, (void**)&original_fopen) != MH_OK) {
-        printf("Failed to create hook for fopen().\n");
-    }
-    if(MH_EnableHook(addr_fopen) != MH_OK) {
-        printf("Failed to enable hook for fopen().\n");
     }
 
     pduwp = (uintptr_t) GetModuleHandleA("PDUWP.exe");
