@@ -14,6 +14,8 @@ typedef struct {
     int64_t (*PHYSFS_tell)(void* handle);
     int32_t (*PHYSFS_seek)(void* handle, uint64_t pos);
     int (*PHYSFS_close)(void* handle);
+    char** (*PHYSFS_enumerateFiles)(const char* directory);
+    void (*PHYSFS_freeList)(void* list);
 }plugin_api;
 
 typedef int (*PLUGINMAIN)(void* dll_handle, const plugin_api* exposed_functions);
