@@ -4,7 +4,6 @@ add_library(pdpm SHARED
 	"src/hooks.c"
 	"src/path.c"
 	"src/filesystem.c"
-	"src/atomic_log.c"
 	"src/injection.c"
 )
 
