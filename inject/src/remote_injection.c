@@ -148,7 +148,7 @@ bool ManualMapDll(HANDLE process, bool ClearHeader, bool ClearNonNeededSections,
         Sleep(10);
     }
 
-    uint8_t* empty_buffer = malloc(1024 * 1024 * 20);
+    uint8_t* empty_buffer = malloc(1024 * 1024 * 20); // 20MiB
     if (empty_buffer == NULL) {
         printf("Unable to allocate memory\n");
         return false;

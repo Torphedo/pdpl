@@ -150,7 +150,7 @@ FILE* hook_fopen(const char* path, const char* mode) {
 // Stalls until filesystem access is unlocked, then tries to call the original function (which now redirects to hook_CreateFile2()).
 HANDLE hook_CreateFile2_stall(LPCWSTR lpFileName, DWORD dwDesiredAccess, DWORD dwShareMode, DWORD dwCreationDisposition, LPCREATEFILE2_EXTENDED_PARAMETERS pCreateExParams) {
     while(lock_filesystem) {
-        printf("CreateFile2(): Waiting for virtual filesystem to start...\n");
+        // printf("CreateFile2(): Waiting for virtual filesystem to start...\n");
         Sleep(50);
     }
     return addr_CreateFile2(lpFileName, dwDesiredAccess, dwShareMode, dwCreationDisposition, pCreateExParams);
