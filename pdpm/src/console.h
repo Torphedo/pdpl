@@ -9,18 +9,8 @@ typedef enum {
     CONSOLE_TOGGLE = 2
 }console_show_state;
 
-typedef enum {
-    DEST_PROCESS_CONSOLE,
-    DEST_RESET
-}console_destination;
-
-typedef enum {
-    CONSOLE_CREATE,
-    CONSOLE_ATTACH // This attaches to any existing console, only plugins after the initial manager should use this.
-}console_create;
-
-bool console_setup(int16_t min_height, console_create method);
+bool console_setup(int16_t min_height);
 void console_set_shown(console_show_state action);
-bool console_redirect_stdio(console_destination destination);
+bool console_redirect_stdio();
 void console_set_min_height(int16_t min_height);
 

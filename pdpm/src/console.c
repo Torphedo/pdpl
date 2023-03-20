@@ -18,19 +18,8 @@ void console_set_shown(console_show_state action) {
     ShowWindow(window, console_shown);
 }
 
-bool console_setup(int16_t min_height, console_create method) {
-    bool success = false;
-
-    // console_redirect_stdio(DEST_RESET);
-
-    if (method == CONSOLE_CREATE) {
-        success = AllocConsole();
-    }
-    else if (method == CONSOLE_ATTACH) {
-        success = AttachConsole(GetCurrentProcessId());
-    }
-
-    if (success) {
+bool console_setup(int16_t min_height) {
+    if (AllocConsole()) {
         console_set_min_height(min_height);
 
         // Enable ANSI escape codes
@@ -39,35 +28,26 @@ bool console_setup(int16_t min_height, console_create method) {
         SetConsoleMode(GetStdHandle(STD_OUTPUT_HANDLE), ConsoleMode | ENABLE_VIRTUAL_TERMINAL_PROCESSING);
 
         console_set_shown(CONSOLE_SHOW);
-        return console_redirect_stdio(DEST_PROCESS_CONSOLE);
+        return console_redirect_stdio();
     }
     else {
         return false;
     }
 }
 
-void destroy_console()
-{
+void destroy_console() {
     HWND window = FindWindowA("ConsoleWindowClass", NULL);
     ShowWindow(window, 0);
     FreeConsole();
-
 }
 
-bool console_redirect_stdio(console_destination destination) {
+bool console_redirect_stdio() {
     bool result = true;
     FILE *fp;
-    static char* dest_in = "CONIN$";
-    static char* dest_out = "CONOUT$";
-    if (destination == DEST_RESET)
-    {
-        dest_in = "NUL:";
-        dest_out = "NUL:";
-    }
 
     // Redirect STDIN if the console has an input handle
     if (GetStdHandle(STD_INPUT_HANDLE) != INVALID_HANDLE_VALUE) {
-        if (freopen_s(&fp, dest_in, "r", stdin) != 0) {
+        if (freopen_s(&fp, "CONIN$", "r", stdin) != 0) {
             result = false;
         } else {
             setvbuf(stdin, NULL, _IONBF, 0);
@@ -75,7 +55,7 @@ bool console_redirect_stdio(console_destination destination) {
     }
     // Redirect STDOUT if the console has an output handle
     if (GetStdHandle(STD_OUTPUT_HANDLE) != INVALID_HANDLE_VALUE) {
-        if (freopen_s(&fp, dest_out, "w", stdout) != 0) {
+        if (freopen_s(&fp, "CONOUT$", "w", stdout) != 0) {
             result = false;
         } else {
             setvbuf(stdout, NULL, _IONBF, 0);
@@ -83,7 +63,7 @@ bool console_redirect_stdio(console_destination destination) {
     }
     // Redirect STDERR if the console has an error handle
     if (GetStdHandle(STD_ERROR_HANDLE) != INVALID_HANDLE_VALUE) {
-        if (freopen_s(&fp, dest_out, "w", stderr) != 0) {
+        if (freopen_s(&fp, "CONOUT$", "w", stderr) != 0) {
             result = false;
         } else {
             setvbuf(stderr, NULL, _IONBF, 0);

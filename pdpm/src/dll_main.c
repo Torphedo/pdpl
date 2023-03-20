@@ -20,7 +20,7 @@
 static const char plugin_manager_msg[] = "[\033[32mPlugin Manager\033[0m]";
 
 void __stdcall injected(HMODULE dll_handle) {
-    console_setup(32000, CONSOLE_CREATE);
+    console_setup(32000);
     SetConsoleTitle("Phantom Dust Plugin Console");
     printf("%s: Created console.\n", plugin_manager_msg);
     printf("%s: Initializing hooks...\n", plugin_manager_msg);
