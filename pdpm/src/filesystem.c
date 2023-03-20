@@ -32,6 +32,16 @@ void vfs_setup() {
     PHYSFS_mkdir("mods/plugins");
     PHYSFS_mkdir("fake");
 
+    // Add mod folder to the search path. This MUST come before the archive mounting...because the archives
+    // are in the mod folder. What a silly thing to mount this after the archives. I have NEVER made this mistake.
+    strcat(app_path, "mods");
+    if (PHYSFS_mount(app_path, "/", true) == 0) {
+        printf("%s: Failed to add %s to the virtual filesystem. (%s)\n", vfs_err, app_path, PHYSFS_getErrorByCode(PHYSFS_getLastErrorCode()));
+    }
+    else {
+        printf("%s: Mounted %s at root.\n", vfs_msg, app_path);
+    }
+
     // Recursive Archive Mounter
     static const char* dir = "/";
     char** file_list = PHYSFS_enumerateFiles(dir);
@@ -52,15 +62,6 @@ void vfs_setup() {
         }
     }
     PHYSFS_freeList(file_list);
-
-    // Add mod folder to the search path
-    strcat(app_path, "mods");
-    if (PHYSFS_mount(app_path, "/", true) == 0) {
-        printf("%s: Failed to add %s to the virtual filesystem. (%s)\n", vfs_err, app_path, PHYSFS_getErrorByCode(PHYSFS_getLastErrorCode()));
-    }
-    else {
-        printf("%s: Mounted %s at root.\n", vfs_msg, app_path);
-    }
 
     memset(app_path, 0, MAX_PATH); // Clear string so there are no leftovers of the old string
     // Get path to Phantom Dust files by getting location of PDUWP.exe and truncating the filename
