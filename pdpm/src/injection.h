@@ -18,6 +18,6 @@ typedef struct {
     void (*PHYSFS_freeList)(void* list);
 }plugin_api;
 
-typedef int (*PLUGINMAIN)(void* dll_handle, const plugin_api* exposed_functions);
+typedef int (__stdcall *PLUGINMAIN)(void* dll_handle, const plugin_api* exposed_functions);
 
 void inject_plugins();
