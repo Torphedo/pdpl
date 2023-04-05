@@ -27,6 +27,8 @@ int main(int argc, char** argv) {
 
     // Run Phantom Dust
     system("explorer shell:AppsFolder\\Microsoft.MSEsper_8wekyb3d8bbwe!App");
+
+    // Wait for the game to start, so we can get a handle to it
     while (get_pid_by_name("PDUWP.exe") == 0) {
         Sleep(1);
     }
@@ -35,12 +37,23 @@ int main(int argc, char** argv) {
 
     HANDLE process = OpenProcess(PROCESS_ALL_ACCESS, false, process_id);
 
-	if(process != INVALID_HANDLE_VALUE && !ManualMapDll(process, true, true, true, true)) {
-		printf("Injecting mods into Phantom Dust... Failed.\n");
-		system("pause");
-		return EXIT_FAILURE;
-	}
-	printf("Injecting mods into Phantom Dust... Success!\n");
+    printf("Injecting mods into Phantom Dust...");
+    if(process == INVALID_HANDLE_VALUE) {
+        printf("Failed (INVALID_HANDLE_VALUE).\n");
+        return EXIT_FAILURE;
+    }
+    else {
+        if(!ManualMapDll(process, true, true, true, true)) {
+            printf("Failed (Couldn't inject the bootstrap program).\n");
+            // system("pause");
+            CloseHandle(process);
+            return EXIT_FAILURE;
+        }
+        else {
+            CloseHandle(process);
+            printf("Success!\n");
+        }
+    }
 
 	return EXIT_SUCCESS;
 }
