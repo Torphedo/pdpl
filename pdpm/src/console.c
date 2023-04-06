@@ -5,9 +5,8 @@
 
 #include "console.h"
 
-static bool console_shown = false;
-
 void console_set_shown(console_show_state action) {
+    static bool console_shown = false;
     if (action == CONSOLE_TOGGLE) {
         console_shown = !console_shown;
     }
@@ -20,25 +19,24 @@ void console_set_shown(console_show_state action) {
 
 bool console_setup(int16_t min_height) {
     if (AllocConsole()) {
-        console_set_min_height(min_height);
+        // Set the screen buffer height for the console
+        CONSOLE_SCREEN_BUFFER_INFO console_info = {0};
+        GetConsoleScreenBufferInfo(GetStdHandle(STD_OUTPUT_HANDLE), &console_info);
+        if (console_info.dwSize.Y < min_height) {
+            console_info.dwSize.Y = min_height;
+        }
+        SetConsoleScreenBufferSize(GetStdHandle(STD_OUTPUT_HANDLE), console_info.dwSize);
 
         // Enable ANSI escape codes
         uint32_t ConsoleMode = 0;
         GetConsoleMode(GetStdHandle(STD_OUTPUT_HANDLE), (LPDWORD) &ConsoleMode);
         SetConsoleMode(GetStdHandle(STD_OUTPUT_HANDLE), ConsoleMode | ENABLE_VIRTUAL_TERMINAL_PROCESSING);
 
+        // Show the console window.
         console_set_shown(CONSOLE_SHOW);
+
         return console_redirect_stdio();
     }
-    else {
-        return false;
-    }
-}
-
-void destroy_console() {
-    HWND window = FindWindowA("ConsoleWindowClass", NULL);
-    ShowWindow(window, 0);
-    FreeConsole();
 }
 
 bool console_redirect_stdio() {
@@ -70,13 +68,4 @@ bool console_redirect_stdio() {
         }
     }
     return result;
-}
-
-void console_set_min_height(int16_t min_height) {
-    CONSOLE_SCREEN_BUFFER_INFO console_info;
-    GetConsoleScreenBufferInfo(GetStdHandle(STD_OUTPUT_HANDLE), &console_info);
-    if (console_info.dwSize.Y < min_height) {
-        console_info.dwSize.Y = min_height;
-    }
-    SetConsoleScreenBufferSize(GetStdHandle(STD_OUTPUT_HANDLE), console_info.dwSize);
 }
