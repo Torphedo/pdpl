@@ -12,10 +12,10 @@
 #include <MemoryModule.h>
 
 #include "path.h"
-#include "injection.h"
+#include "plugins.h"
 
-static const char injector_msg[] = "[\033[32mPlugin Loader\033[0m]";
-static const char injector_warn[] = "[\033[33mPlugin Loader\033[0m]";
+static const char loader_msg[] = "[\033[32mPlugin Loader\033[0m]";
+static const char loader_warn[] = "[\033[33mPlugin Loader\033[0m]";
 
 HMEMORYMODULE* plugin_handles = NULL;
 uint32_t plugin_count = 0;
@@ -57,6 +57,25 @@ const plugin_api api = {
         .plugin_get_proc_address = (void *(*)(void *, const char *)) MemoryGetProcAddress
 };
 
+HMEMORYMODULE custom_load_library(LPCSTR name, void* unused) {
+    char path[MAX_PATH] = "/plugins/";
+    strncat(path, name, MAX_PATH - sizeof("/plugins/"));
+    if (PHYSFS_exists(path)) {
+        PHYSFS_File* module_file = PHYSFS_openRead(path);
+        if (module_file == PHYSFS_ERR_OK) {
+            uint64_t size = PHYSFS_fileLength(module_file);
+            uint8_t* buffer = calloc(1, size);
+            if (buffer != NULL) {
+                PHYSFS_readBytes(module_file, buffer, size);
+                PHYSFS_close(module_file);
+                return MemoryLoadLibraryEx(buffer, size, MemoryDefaultAlloc, MemoryDefaultFree, custom_load_library, MemoryDefaultGetProcAddress, MemoryDefaultFreeLibrary, NULL);
+            }
+        }
+    }
+    // It doesn't exist in the search path or we failed to load the DLL, fall back to the default.
+    LoadLibraryA(name);
+}
+
 void inject_plugins() {
     static const char* dir = "/plugins/";
     char** file_list = PHYSFS_enumerateFiles(dir);
@@ -83,17 +102,18 @@ void inject_plugins() {
                 uint8_t* plugin_data = calloc(1, filesize);
                 if (plugin_data != NULL) {
                     PHYSFS_readBytes(dll_file, plugin_data, filesize);
-                    plugin_handles[idx] = MemoryLoadLibrary(plugin_data, filesize);
+                    // This is a really long one-liner, but this is just MemoryLoadLibrary() but using custom_load_library() to load dependencies.
+                    plugin_handles[idx] = MemoryLoadLibraryEx(plugin_data, filesize, MemoryDefaultAlloc, MemoryDefaultFree, custom_load_library, MemoryDefaultGetProcAddress, MemoryDefaultFreeLibrary, NULL);
 
                     PLUGINMAIN plugin_main = (PLUGINMAIN) MemoryGetProcAddress(plugin_handles[idx], "plugin_main");
                     FARPROC dll_main = MemoryGetProcAddress(plugin_handles[idx], "DllMain");
                     if (dll_main != NULL) {
                         if (plugin_main != NULL) {
-                            printf("%s: %s exports DllMain() and plugin_main(), both will be executed.\n", injector_warn, *i);
+                            printf("%s: %s exports DllMain() and plugin_main(), both will be executed.\n", loader_warn, *i);
                         }
                         else {
                             // TODO: This is kind of a long message, maybe shorten it?
-                            printf("%s: %s doesn't export plugin_main(). Using plugin_main() is preferred, because it gives access to the virtual filesystem and allows you to unload your plugin.\n", injector_warn, *i);
+                            printf("%s: %s doesn't export plugin_main(). Using plugin_main() is preferred, because it gives access to the virtual filesystem and allows you to unload your plugin.\n", loader_warn, *i);
                         }
                     }
                     if (plugin_main != NULL) {
@@ -102,7 +122,7 @@ void inject_plugins() {
                 }
             }
 
-            printf("%s: Loaded %s.\n", injector_msg, *i);
+            printf("%s: Loaded %s.\n", loader_msg, *i);
             idx++;
         }
     }

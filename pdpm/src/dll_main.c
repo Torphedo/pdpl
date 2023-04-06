@@ -15,7 +15,7 @@
 #include "path.h"
 #include "hooks.h"
 #include "filesystem.h"
-#include "injection.h"
+#include "plugins.h"
 
 static const char plugin_manager_msg[] = "[\033[32mPlugin Manager\033[0m]";
 

@@ -4,7 +4,7 @@ add_library(pdpm SHARED
 	"src/hooks.c"
 	"src/path.c"
 	"src/filesystem.c"
-	"src/injection.c"
+	"src/plugins.c"
 )
 
 target_link_libraries(pdpm PRIVATE "-s" minhook physfs-static MemoryModule)
