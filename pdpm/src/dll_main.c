@@ -42,11 +42,6 @@ void __stdcall injected(HMODULE dll_handle) {
         }
 		Sleep(1);
 	}
-
-    PHYSFS_deinit();
-
-	// Uninject
-	FreeLibraryAndExitThread((HMODULE)(dll_handle), EXIT_SUCCESS);
 }
 
 __declspec(dllexport) int32_t __stdcall DllMain(HINSTANCE dll_handle, uint32_t reason, void* reserved)
