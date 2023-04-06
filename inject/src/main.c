@@ -12,6 +12,8 @@
 #include "remote_injection.h"
 
 int main(int argc, char** argv) {
+    static int result = EXIT_SUCCESS;
+
     // Kill Phantom Dust if it's already running
     uint32_t process_id = get_pid_by_name("PDUWP.exe");
     if (process_id != 0) {
@@ -19,10 +21,12 @@ int main(int argc, char** argv) {
         void* process = OpenProcess(PROCESS_TERMINATE, false, process_id);
         if (process == NULL) {
             printf("main(): Unable to open process ID %d for termination.\n", process_id);
-            return false;
+            system("pause");
+            return EXIT_FAILURE;
         }
-        // Terminate Phantom Dust with an exit code of 0
-        TerminateProcess(process, 0);
+        // Terminate Phantom Dust with a success error code
+        TerminateProcess(process, EXIT_SUCCESS);
+        CloseHandle(process);
     }
 
     // Run Phantom Dust
@@ -40,20 +44,22 @@ int main(int argc, char** argv) {
     printf("Injecting mods into Phantom Dust...");
     if(process == INVALID_HANDLE_VALUE) {
         printf("Failed (INVALID_HANDLE_VALUE).\n");
-        return EXIT_FAILURE;
+        result = EXIT_FAILURE;
     }
     else {
         if(!ManualMapDll(process, true, true, true, true)) {
             printf("Failed (Couldn't inject the bootstrap program).\n");
-            // system("pause");
-            CloseHandle(process);
-            return EXIT_FAILURE;
+            result = EXIT_FAILURE;
         }
         else {
-            CloseHandle(process);
             printf("Success!\n");
+            result = EXIT_SUCCESS;
         }
+        CloseHandle(process);
     }
 
-	return EXIT_SUCCESS;
+    if (result != EXIT_SUCCESS) {
+        system("pause");
+    }
+	return result;
 }
