@@ -48,7 +48,7 @@ int main(int argc, char** argv) {
     }
     else {
         if(!self_inject(process)) {
-            printf("Failed (Couldn't inject the bootstrap program).\n");
+            printf("Failed (Couldn't inject the loader).\n");
             result = EXIT_FAILURE;
         }
         else {

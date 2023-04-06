@@ -25,4 +25,4 @@ add_subdirectory(ext/physfs)
 add_subdirectory(ext/minhook)
 add_subdirectory(ext/MemoryModule)
 
-add_subdirectory(inject)
+add_subdirectory(pdpl)
