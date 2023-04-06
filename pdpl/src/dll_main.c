@@ -1,5 +1,4 @@
 #include <stdint.h>
-#include <stdlib.h>
 #include <stdio.h>
 
 #define WIN32_LEAN_AND_MEAN
@@ -9,28 +8,25 @@
 #define NOMB
 
 #include <Windows.h>
-#include <physfs.h>
 
 #include "console.h"
 #include "path.h"
 #include "hooks.h"
-#include "filesystem.h"
-#include "plugins.h"
 
-static const char plugin_manager_msg[] = "[\033[32mPlugin Manager\033[0m]";
+static const char plugin_manager_msg[] = "[\033[32mBootstrap\033[0m]";
 
 void __stdcall injected(HMODULE dll_handle) {
+    hook_create_anti_cheat();
     console_setup(32000);
     SetConsoleTitle("Phantom Dust Plugin Console");
     printf("%s: Created console.\n", plugin_manager_msg);
-    printf("%s: Initializing hooks...\n", plugin_manager_msg);
-    hooks_setup_lock_files();
-    vfs_setup();
 
-    printf("%s: Finished startup. Welcome to Phantom Dust Plugin Manager.\n\n", plugin_manager_msg);
+    char path[MAX_PATH] = {0};
+    get_ms_esper_path(path);
+    strcat(path, "mods\\pd_loader_core.dll");
+    LoadLibrary(path);
 
-    inject_plugins();
-    hooks_unlock_filesystem();
+    printf("%s: Finished startup.\n\n", plugin_manager_msg);
 
     const uintptr_t esper_base = (uintptr_t) GetModuleHandleA("PDUWP.exe");
     uint32_t* version_number = (uint32_t*)(uintptr_t)(esper_base + 0x4C5250);
@@ -44,10 +40,8 @@ void __stdcall injected(HMODULE dll_handle) {
 	}
 }
 
-__declspec(dllexport) int32_t __stdcall DllMain(HINSTANCE dll_handle, uint32_t reason, void* reserved)
-{
-	if (reason == DLL_PROCESS_ATTACH)
-	{
+__declspec(dllexport) int32_t __stdcall DllMain(HINSTANCE dll_handle, uint32_t reason, void* reserved) {
+	if (reason == DLL_PROCESS_ATTACH) {
 		// Disable DLL notifications for new threads starting up, because we have no need to run special code here.
 		DisableThreadLibraryCalls(dll_handle);
 

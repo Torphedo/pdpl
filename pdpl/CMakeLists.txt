@@ -3,12 +3,10 @@ add_library(pdpl SHARED
 	"src/console.c"
 	"src/hooks.c"
 	"src/path.c"
-	"src/filesystem.c"
-	"src/plugins.c"
 )
 
-target_link_libraries(pdpl PRIVATE "-s" minhook physfs-static MemoryModule)
-target_include_directories(pdpl PRIVATE "../ext/minhook/include" "../ext/physfs/src" "../ext/MemoryModule")
+target_link_libraries(pdpl PRIVATE "-s" minhook)
+target_include_directories(pdpl PRIVATE "../ext/minhook/include")
 
 # This object file needs to be rebuilt to force it to include the new pdpl.dll on each build.
 add_custom_command(

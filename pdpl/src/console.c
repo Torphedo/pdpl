@@ -5,18 +5,6 @@
 
 #include "console.h"
 
-void console_set_shown(console_show_state action) {
-    static bool console_shown = false;
-    if (action == CONSOLE_TOGGLE) {
-        console_shown = !console_shown;
-    }
-    else {
-        console_shown = action;
-    }
-    HWND window = FindWindowA("ConsoleWindowClass", NULL);
-    ShowWindow(window, console_shown);
-}
-
 bool console_setup(int16_t min_height) {
     if (AllocConsole()) {
         // Set the screen buffer height for the console
@@ -33,7 +21,8 @@ bool console_setup(int16_t min_height) {
         SetConsoleMode(GetStdHandle(STD_OUTPUT_HANDLE), ConsoleMode | ENABLE_VIRTUAL_TERMINAL_PROCESSING);
 
         // Show the console window.
-        console_set_shown(CONSOLE_SHOW);
+        HWND window = FindWindowA("ConsoleWindowClass", NULL);
+        ShowWindow(window, SW_SHOW);
 
         return console_redirect_stdio();
     }
