@@ -26,3 +26,4 @@ add_subdirectory(ext/minhook)
 add_subdirectory(ext/MemoryModule)
 
 add_subdirectory(pdpl)
+add_subdirectory(inject)
