@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.16)
-project(phantom_dust_plugin_manager
-	VERSION 0.0.1
+project(phantom_dust_plugin_loader
+	VERSION 0.1.0
 	LANGUAGES C
 )
 
@@ -25,5 +25,5 @@ add_subdirectory(ext/physfs)
 add_subdirectory(ext/minhook)
 add_subdirectory(ext/MemoryModule)
 
-add_subdirectory(pdpm)
+add_subdirectory(pdpl)
 add_subdirectory(inject)

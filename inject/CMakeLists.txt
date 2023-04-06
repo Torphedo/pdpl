@@ -4,4 +4,4 @@ add_executable(inject
 )
 target_include_directories(inject PRIVATE "../ext/incbin")
 
-target_compile_definitions(inject PRIVATE PDPM_DLL="${CMAKE_CURRENT_BINARY_DIR}/../pdpm/pdpm.dll")
+target_compile_definitions(inject PRIVATE PDPM_DLL="${CMAKE_CURRENT_BINARY_DIR}/../pdpl/pdpl.dll")
