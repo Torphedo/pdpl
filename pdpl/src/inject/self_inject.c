@@ -1,7 +1,6 @@
-#include <aclapi.h>
-#include <sddl.h>
-#include <tlhelp32.h>
+#include <Windows.h>
 
+#include <tlhelp32.h>
 
 #include "self_inject.h"
 #include "../loader_init.h"

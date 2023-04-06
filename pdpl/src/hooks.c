@@ -1,9 +1,12 @@
 #include <stdio.h>
 
+
 // Allow use of LPCREATEFILE2_EXTENDED_PARAMETERS on MinGW
+// Comment out this line to build in VS2022
 #define _WIN32_WINNT 0x0603
 
-#include <fileapi.h>
+#include <Windows.h>
+
 #include <MinHook.h>
 #include <physfs.h>
 
