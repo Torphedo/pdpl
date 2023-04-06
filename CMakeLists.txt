@@ -27,4 +27,3 @@ add_subdirectory(ext/MemoryModule)
 
 add_subdirectory(pdpm)
 add_subdirectory(inject)
-add_subdirectory(test_plugin)
