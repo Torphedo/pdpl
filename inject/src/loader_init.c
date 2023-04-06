@@ -19,7 +19,7 @@
 
 static const char plugin_manager_msg[] = "[\033[32mPlugin Manager\033[0m]";
 
-void __stdcall injected(HMODULE dll_handle) {
+void loader_init() {
     console_setup(32000);
     SetConsoleTitle("Phantom Dust Plugin Console");
     printf("%s: Created console.\n", plugin_manager_msg);
@@ -42,17 +42,4 @@ void __stdcall injected(HMODULE dll_handle) {
         }
 		Sleep(1);
 	}
-}
-
-__declspec(dllexport) int32_t __stdcall DllMain(HINSTANCE dll_handle, uint32_t reason, void* reserved)
-{
-	if (reason == DLL_PROCESS_ATTACH)
-	{
-		// Disable DLL notifications for new threads starting up, because we have no need to run special code here.
-		DisableThreadLibraryCalls(dll_handle);
-
-		// Start injected code
-		CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE) injected, dll_handle, 0, NULL);
-	}
-	return TRUE;
 }

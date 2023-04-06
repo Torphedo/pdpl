@@ -9,7 +9,7 @@
 #define NOMB
 #include <Windows.h>
 
-#include "remote_injection.h"
+#include "self_inject.h"
 
 int main(int argc, char** argv) {
     static int result = EXIT_SUCCESS;
@@ -47,7 +47,7 @@ int main(int argc, char** argv) {
         result = EXIT_FAILURE;
     }
     else {
-        if(!ManualMapDll(process, true, true, true, true)) {
+        if(!self_inject(process)) {
             printf("Failed (Couldn't inject the bootstrap program).\n");
             result = EXIT_FAILURE;
         }
