@@ -17,9 +17,9 @@ CHECK_VERSION_CREATE original_check_version_create = NULL;
 
 // The base address of "PDUWP.exe" in memory, stored here so that we don't need to get it again every time
 static uintptr_t pduwp = 0;
+static uint32_t* version_number = NULL;
 
 void hook_check_version(void) {
-    uint32_t* version_number = (uint32_t*)(uintptr_t)(pduwp + 0x4C5250);
     if (*version_number <= 140) {
         *version_number = 0;
     }
@@ -27,7 +27,6 @@ void hook_check_version(void) {
 }
 
 void hook_check_version_create(void* unknown_ptr, int unknown_int) {
-    uint32_t* version_number = (uint32_t*)(uintptr_t)(pduwp + 0x4C5250);
     if (*version_number <= 140) {
         *version_number = 0;
     }
@@ -38,6 +37,13 @@ bool hook_create_anti_cheat() {
     MH_Initialize();
 
     pduwp = (uintptr_t) GetModuleHandleA("PDUWP.exe");
+    version_number = (uint32_t*)(pduwp + 0x4C5250);
+
+    // Avoid nullptr dereference in our hooks.
+    if (pduwp == 0) {
+        return false;
+    }
+
     addr_check_version = (void*)(uintptr_t)(pduwp + 0x1826B0);
     MH_CreateHook(addr_check_version, &hook_check_version, (void**)&original_check_version);
     MH_EnableHook(addr_check_version);
