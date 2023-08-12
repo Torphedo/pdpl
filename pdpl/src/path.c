@@ -5,20 +5,13 @@
 
 #include "path.h"
 
+// We assume the input string has a length of MAX_PATH.
 void get_ms_esper_path(char* string) {
-    static char ms_esper_path[MAX_PATH] = {0};
-    static uint32_t path_length = 0;
-
-    // Only get the path if it's empty
-    if (ms_esper_path[0] == 0) {
-        if (SHGetFolderPathA(0, CSIDL_LOCAL_APPDATA, NULL, 0, ms_esper_path) == S_OK) {
-            path_length = strlen(ms_esper_path);
-            // Remove the "AC" from the end of the path
-            memset(&ms_esper_path[path_length - 2], 0, 2);
-            // Add "RoamingState\" to the end
-            strncat(ms_esper_path, "RoamingState\\", sizeof("RoamingState\\"));
-            path_length += sizeof("RoamingState\\") - 1;
-        }
+    if (SHGetFolderPathA(0, CSIDL_LOCAL_APPDATA, NULL, 0, string) == S_OK) {
+        uint32_t path_length = strlen(string);
+        // Remove the "AC" from the end of the path
+        memset(&string[path_length - 2], 0, 2);
+        // Add "RoamingState\" to the end
+        strncat(string, "RoamingState\\", sizeof("RoamingState\\"));
     }
-    strncpy(string, ms_esper_path, path_length);
 }
