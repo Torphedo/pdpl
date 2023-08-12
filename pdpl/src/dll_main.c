@@ -9,7 +9,6 @@
 
 #include <Windows.h>
 
-#include "console.h"
 #include "path.h"
 #include "hooks.h"
 
@@ -17,17 +16,11 @@ static const char bootstrap_msg[] = "[\033[32mBootstrap\033[0m]";
 
 void __stdcall injected(HMODULE dll_handle) {
     hook_create_anti_cheat();
-    console_setup(32000);
-    SetConsoleTitle("Phantom Dust Plugin Console");
-    printf("%s: Created console.\n", bootstrap_msg);
-    printf("%s: Loading pd_loader_core.dll...\n", bootstrap_msg);
 
     char path[MAX_PATH] = {0};
     get_ms_esper_path(path);
     strcat(path, "mods\\pd_loader_core.dll");
     LoadLibrary(path);
-
-    printf("%s: Finished startup.\n\n", bootstrap_msg);
 
     const uintptr_t esper_base = (uintptr_t) GetModuleHandleA("PDUWP.exe");
     uint32_t* version_number = (uint32_t*)(uintptr_t)(esper_base + 0x4C5250);

@@ -1,6 +1,5 @@
 add_library(pdpl SHARED
 	"src/dll_main.c"
-	"src/console.c"
 	"src/hooks.c"
 	"src/path.c"
 )
