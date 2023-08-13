@@ -1,6 +1,3 @@
 [submodule "ext/minhook"]
 	path = ext/minhook
 	url = https://github.com/TsudaKageyu/minhook
-[submodule "ext/incbin"]
-	path = ext/incbin
-	url = https://github.com/graphitemaster/incbin
