@@ -45,7 +45,7 @@ int main(int argc, char** argv) {
     strcat(core_path, "\\pd_loader_core.dll");
     if (!file_exists(core_path)) {
         if (!file_exists("pd_loader_core.dll")) {
-            printf("Couldn't find pd_loader_core.dll. Please place this file in the mods folder or next to pdpl.exe.\n");
+            printf("Couldn't find pd_loader_core.dll. Please place this file in the mods folder or next to the program.\n");
             system("pause");
         }
         else {
