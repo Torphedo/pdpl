@@ -1,5 +1,5 @@
 #include <stdio.h>
-#include <Aclapi.h>
+#include <aclapi.h>
 #include <sddl.h>
 
 // Reduce the size of Windows.h to improve compile time
@@ -8,9 +8,9 @@
 #define NOCLIPBOARD
 #define NODRAWTEXT
 #define NOMB
-#include <Windows.h>
+#include <windows.h>
 
-#include <TlHelp32.h>
+#include <tlhelp32.h>
 #include <incbin.h>
 
 #include "remote_injection.h"

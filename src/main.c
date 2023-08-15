@@ -8,7 +8,7 @@
 #define NOCLIPBOARD
 #define NODRAWTEXT
 #define NOMB
-#include <Windows.h>
+#include <windows.h>
 #include <shlobj.h>
 #include <direct.h>
 

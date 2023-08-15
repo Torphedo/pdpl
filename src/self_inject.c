@@ -4,8 +4,8 @@
 #define NOCLIPBOARD
 #define NODRAWTEXT
 #define NOMB
-#include <Windows.h>
-#include <TlHelp32.h>
+#include <windows.h>
+#include <tlhelp32.h>
 
 #include "self_inject.h"
 

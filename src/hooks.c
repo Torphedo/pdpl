@@ -1,6 +1,6 @@
 #include <stdint.h>
 
-#include <MinHook.h>
+#include "include/MinHook.h"
 
 #include "hooks.h"
 
