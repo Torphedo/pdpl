@@ -54,6 +54,9 @@ int main(int argc, char** argv) {
         }
     }
 
+    // The easy way, but sometimes flagged for being a giant command.
+    // system("if not exist %LOCALAPPDATA%\\Packages\\Microsoft.MSEsper_8wekyb3d8bbwe\\RoamingState\\mods\\pd_loader_core.dll (cp pd_loader_core.dll %LOCALAPPDATA%\\Packages\\Microsoft.MSEsper_8wekyb3d8bbwe\\RoamingState\\mods\\pd_loader_core.dll)");
+
     // Kill Phantom Dust if it's already running
     uint32_t process_id = get_pid_by_name("PDUWP.exe");
     if (process_id != 0) {
