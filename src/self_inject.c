@@ -37,40 +37,38 @@ bool self_inject(uint32_t process_id, LPTHREAD_START_ROUTINE entry_point, void* 
     HANDLE targetProcess = OpenProcess(PROCESS_VM_WRITE | PROCESS_CREATE_THREAD | PROCESS_VM_OPERATION, FALSE, process_id);
 
     // Get current image's base address
-    PVOID imageBase = GetModuleHandle(NULL);
-    PIMAGE_DOS_HEADER dosHeader = (PIMAGE_DOS_HEADER)imageBase;
-    PIMAGE_NT_HEADERS ntHeader = (PIMAGE_NT_HEADERS)((DWORD_PTR)imageBase + dosHeader->e_lfanew);
+    void* imageBase = GetModuleHandle(NULL);
+    IMAGE_DOS_HEADER* dosHeader = imageBase;
+    IMAGE_NT_HEADERS* ntHeader = (imageBase + dosHeader->e_lfanew);
 
     // Allocate a new memory block and copy the current PE image to this new memory block
-    PVOID localImage = VirtualAlloc(NULL, ntHeader->OptionalHeader.SizeOfImage, MEM_COMMIT, PAGE_READWRITE);
+    void* localImage = VirtualAlloc(NULL, ntHeader->OptionalHeader.SizeOfImage, MEM_COMMIT, PAGE_READWRITE);
     memcpy(localImage, imageBase, ntHeader->OptionalHeader.SizeOfImage);
 
-    // Allote a new memory block in the target process. This is where we will be injecting this PE
-    PVOID targetImage = VirtualAllocEx(targetProcess, NULL, ntHeader->OptionalHeader.SizeOfImage, MEM_COMMIT, PAGE_EXECUTE_READWRITE);
+    // Allocate a new memory block in the target process. This is where we will be injecting this PE
+    void* targetImage = VirtualAllocEx(targetProcess, NULL, ntHeader->OptionalHeader.SizeOfImage, MEM_COMMIT, PAGE_EXECUTE_READWRITE);
 
     // Calculate delta between addresses of where the image will be located in the target process and where it's located currently
-    DWORD_PTR deltaImageBase = (DWORD_PTR)targetImage - (DWORD_PTR)imageBase;
+    uintptr_t deltaImageBase = (uintptr_t)targetImage - (uintptr_t)imageBase;
 
-    // Relocate localImage, to ensure that it will have correct addresses once its in the target process
-    PIMAGE_BASE_RELOCATION relocationTable = (PIMAGE_BASE_RELOCATION)((DWORD_PTR)localImage + ntHeader->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_BASERELOC].VirtualAddress);
+    // Relocate localImage, to ensure that it will have correct addresses once it's in the target process
+    IMAGE_BASE_RELOCATION* relocationTable = (IMAGE_BASE_RELOCATION*)(localImage + ntHeader->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_BASERELOC].VirtualAddress);
     DWORD relocationEntriesCount = 0;
-    PDWORD_PTR patchedAddress;
-    PBASE_RELOCATION_ENTRY relocationRVA = NULL;
 
     while (relocationTable->SizeOfBlock > 0)
     {
         relocationEntriesCount = (relocationTable->SizeOfBlock - sizeof(IMAGE_BASE_RELOCATION)) / sizeof(USHORT);
-        relocationRVA = (PBASE_RELOCATION_ENTRY)(relocationTable + 1);
+        BASE_RELOCATION_ENTRY* relocationRVA = (BASE_RELOCATION_ENTRY*)(relocationTable + 1);
 
         for (short i = 0; i < relocationEntriesCount; i++)
         {
             if (relocationRVA[i].Offset)
             {
-                patchedAddress = (PDWORD_PTR)((DWORD_PTR)localImage + relocationTable->VirtualAddress + relocationRVA[i].Offset);
+                uintptr_t* patchedAddress = (uintptr_t*)(localImage + relocationTable->VirtualAddress + relocationRVA[i].Offset);
                 *patchedAddress += deltaImageBase;
             }
         }
-        relocationTable = (PIMAGE_BASE_RELOCATION)((DWORD_PTR)relocationTable + relocationTable->SizeOfBlock);
+        relocationTable = (IMAGE_BASE_RELOCATION*)((uintptr_t)relocationTable + relocationTable->SizeOfBlock);
     }
 
     // Write the relocated localImage into the target process
