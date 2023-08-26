@@ -40,13 +40,13 @@ bool self_inject(uint32_t process_id, LPTHREAD_START_ROUTINE entry_point, void* 
 	}
 
     // Get current image's base address
-    void* image_base = GetModuleHandle(NULL);
+    uint8_t* image_base = GetModuleHandle(NULL);
     IMAGE_DOS_HEADER* dos_header = image_base;
     IMAGE_NT_HEADERS* nt_header = (image_base + dos_header->e_lfanew);
 
 	// Allocate buffers for the PE data in the local and remote processes
-    void* local_image = malloc(nt_header->OptionalHeader.SizeOfImage);
-    void* target_image = VirtualAllocEx(target_process, NULL, nt_header->OptionalHeader.SizeOfImage, MEM_COMMIT, PAGE_EXECUTE_READWRITE);
+    uint8_t* local_image = malloc(nt_header->OptionalHeader.SizeOfImage);
+    uint8_t* target_image = VirtualAllocEx(target_process, NULL, nt_header->OptionalHeader.SizeOfImage, MEM_COMMIT, PAGE_EXECUTE_READWRITE);
 
 	// Early exit if we fail an allocation. Free does nothing if passed NULL.
 	if (local_image == NULL || target_image == NULL) {
@@ -64,10 +64,9 @@ bool self_inject(uint32_t process_id, LPTHREAD_START_ROUTINE entry_point, void* 
 
     // Relocate local_image, to ensure that it will have correct addresses once it's in the target process
     IMAGE_BASE_RELOCATION* relocation_table = (IMAGE_BASE_RELOCATION*)(local_image + nt_header->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_BASERELOC].VirtualAddress);
-    uint32_t relocation_entries_count = 0;
 
     while (relocation_table->SizeOfBlock > 0) {
-        relocation_entries_count = (relocation_table->SizeOfBlock - sizeof(IMAGE_BASE_RELOCATION)) / sizeof(USHORT);
+        uint32_t relocation_entries_count = (relocation_table->SizeOfBlock - sizeof(IMAGE_BASE_RELOCATION)) / sizeof(USHORT);
         BASE_RELOCATION_ENTRY* relative_addresses = (BASE_RELOCATION_ENTRY*)(&relocation_table[1]);
 
         for (uint32_t i = 0; i < relocation_entries_count; i++) {
@@ -84,7 +83,7 @@ bool self_inject(uint32_t process_id, LPTHREAD_START_ROUTINE entry_point, void* 
     free(local_image);
 
     // Start the injected PE inside the target process
-    CreateRemoteThread(target_process, NULL, 0, (LPTHREAD_START_ROUTINE)(entry_point + delta_image_base), parameter, 0, NULL);
+    CreateRemoteThread(target_process, NULL, 0, (LPTHREAD_START_ROUTINE)((uint8_t*)entry_point + delta_image_base), parameter, 0, NULL);
 
     return true;
 }
