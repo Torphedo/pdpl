@@ -66,15 +66,20 @@ bool self_inject(uint32_t process_id, LPTHREAD_START_ROUTINE entry_point, void* 
     IMAGE_BASE_RELOCATION* relocation_table = (IMAGE_BASE_RELOCATION*)(local_image + nt_header->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_BASERELOC].VirtualAddress);
 
     while (relocation_table->SizeOfBlock > 0) {
-        uint32_t relocation_entries_count = (relocation_table->SizeOfBlock - sizeof(IMAGE_BASE_RELOCATION)) / sizeof(USHORT);
-        BASE_RELOCATION_ENTRY* relative_addresses = (BASE_RELOCATION_ENTRY*)(&relocation_table[1]);
+	  	// BASE_RELOCATION_ENTRY is 2 bytes, so the size (minus header) over 2 is our entry count
+		// (not using sizeof(BASE_RELOCATION_ENTRY) because some compilers might add padding or something on bitfields)
+        uint32_t relocation_entries_count = (relocation_table->SizeOfBlock - sizeof(IMAGE_BASE_RELOCATION)) / sizeof(uint16_t);
+		// This VirtualAddress member tells us the offset of the relocation table from the image base.
+        BASE_RELOCATION_ENTRY* relative_addresses = (BASE_RELOCATION_ENTRY*)((uintptr_t)relocation_table->VirtualAddress + local_image);
 
         for (uint32_t i = 0; i < relocation_entries_count; i++) {
             if (relative_addresses[i].Offset) {
-                uintptr_t* patched_address = (uintptr_t*)(local_image + relocation_table->VirtualAddress + relative_addresses[i].Offset);
+			  	// Get the address of the pointer we need to relocate, then add our image base delta.
+                uintptr_t* patched_address = (uintptr_t*)(relative_addresses + relative_addresses[i].Offset);
                 *patched_address += delta_image_base;
             }
         }
+		// Go to the next relocation table and repeat. There is one table per 4KiB page.
         relocation_table = (IMAGE_BASE_RELOCATION*)((uintptr_t)relocation_table + relocation_table->SizeOfBlock);
     }
 
