@@ -57,7 +57,7 @@ bool self_inject(uint32_t process_id, LPTHREAD_START_ROUTINE entry_point, void* 
 
     while (relocation_table->SizeOfBlock > 0) {
         relocation_entries_count = (relocation_table->SizeOfBlock - sizeof(IMAGE_BASE_RELOCATION)) / sizeof(USHORT);
-        BASE_RELOCATION_ENTRY* relative_addresses = (BASE_RELOCATION_ENTRY*)(relocation_table + 1);
+        BASE_RELOCATION_ENTRY* relative_addresses = (BASE_RELOCATION_ENTRY*)(&relocation_table[1]);
 
         for (short i = 0; i < relocation_entries_count; i++) {
             if (relative_addresses[i].Offset) {
@@ -72,7 +72,7 @@ bool self_inject(uint32_t process_id, LPTHREAD_START_ROUTINE entry_point, void* 
     WriteProcessMemory(target_process, target_image, local_image, nt_header->OptionalHeader.SizeOfImage, NULL);
 
     // Start the injected PE inside the target process
-    CreateRemoteThread(target_process, NULL, 0, (LPTHREAD_START_ROUTINE)((DWORD_PTR)entry_point + delta_image_base), parameter, 0, NULL);
+    CreateRemoteThread(target_process, NULL, 0, (LPTHREAD_START_ROUTINE)(entry_point + delta_image_base), parameter, 0, NULL);
 
     return true;
 }
