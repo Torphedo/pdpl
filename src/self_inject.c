@@ -64,13 +64,13 @@ bool self_inject(uint32_t process_id, LPTHREAD_START_ROUTINE entry_point, void* 
 
     // Relocate local_image, to ensure that it will have correct addresses once it's in the target process
     IMAGE_BASE_RELOCATION* relocation_table = (IMAGE_BASE_RELOCATION*)(local_image + nt_header->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_BASERELOC].VirtualAddress);
-    DWORD relocation_entries_count = 0;
+    uint32_t relocation_entries_count = 0;
 
     while (relocation_table->SizeOfBlock > 0) {
         relocation_entries_count = (relocation_table->SizeOfBlock - sizeof(IMAGE_BASE_RELOCATION)) / sizeof(USHORT);
         BASE_RELOCATION_ENTRY* relative_addresses = (BASE_RELOCATION_ENTRY*)(&relocation_table[1]);
 
-        for (short i = 0; i < relocation_entries_count; i++) {
+        for (uint32_t i = 0; i < relocation_entries_count; i++) {
             if (relative_addresses[i].Offset) {
                 uintptr_t* patched_address = (uintptr_t*)(local_image + relocation_table->VirtualAddress + relative_addresses[i].Offset);
                 *patched_address += delta_image_base;
