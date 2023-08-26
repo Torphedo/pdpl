@@ -70,6 +70,7 @@ bool self_inject(uint32_t process_id, LPTHREAD_START_ROUTINE entry_point, void* 
 
     // Write the relocated local_image into the target process
     WriteProcessMemory(target_process, target_image, local_image, nt_header->OptionalHeader.SizeOfImage, NULL);
+    free(local_image);
 
     // Start the injected PE inside the target process
     CreateRemoteThread(target_process, NULL, 0, (LPTHREAD_START_ROUTINE)(entry_point + delta_image_base), parameter, 0, NULL);
