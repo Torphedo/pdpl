@@ -73,7 +73,7 @@ bool self_inject(uint32_t process_id, LPTHREAD_START_ROUTINE entry_point) {
               if (entries[i].Offset) {
                   // Get the address of the pointer we need to relocate, then add our image base delta.
                   uintptr_t* patched_address = (uintptr_t*)((uintptr_t)local_image + reloc_table->VirtualAddress + entries[i].Offset);
-                  *patched_address += reloc_bias;
+                  *patched_address += reloc_bias + reloc_table->VirtualAddress;
               }
         }
 

@@ -12,12 +12,12 @@
 #include "self_inject.h"
 #include "hooks.h"
 #include "dll.h"
+#include "process.h"
 
 static char core_path[MAX_PATH] = {0};
 
 DWORD bootstrap(void* loader_path) {
     hook_create_anti_cheat();
-    LoadLibrary(core_path);
 
     // Get version number offset.
     const uintptr_t esper_base = (uintptr_t) GetModuleHandleA("PDUWP.exe");
@@ -71,6 +71,7 @@ int main(int argc, char** argv) {
 
     // Run Phantom Dust
     system("explorer shell:AppsFolder\\Microsoft.MSEsper_8wekyb3d8bbwe!App");
+    enable_debug_privilege(true);
 
     // Wait for the game to start, so we can get a handle to it
     process_id = 0;
@@ -79,9 +80,11 @@ int main(int argc, char** argv) {
         process_id = get_pid_by_name("PDUWP.exe");
     }
 
-    printf("Injecting mods into Phantom Dust...");
-    remote_load_library(process_id, core_path);
-    // self_inject(process_id, bootstrap);
+    printf("Injecting mods into Phantom Dust...\n");
+    // dll_inject_memory_file(process_id, core_path);
+
+    // dll_inject_memory_file(process_id, argv[0]);
+    self_inject(process_id, bootstrap);
 
     if (result != EXIT_SUCCESS) {
         system("pause");

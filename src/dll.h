@@ -6,12 +6,20 @@
 
 typedef BOOL (WINAPI *dll_entry)(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpReserved);
 
+bool call_dll_main_remote(uint32_t pid, dll_entry dll_main, void* base_addr);
+
 /// Extremely simple DLL injector using CreateRemoteThread() to call
 /// LoadLibraryA([dll_path]) in the remote process.
 /// \param pid ID of the target process
 /// \param dll_path Path of the DLL to load
 /// \return
 bool remote_load_library(uint32_t pid, const char* dll_path);
+
+/// Extremely simple DLL injector using CreateRemoteThread() to call
+/// LoadLibraryA([dll_path]) in the remote process.
+/// \param h A process handle with at least PROCESS_VM_OPERATION | PROCESS_VM_WRITE | PROCESS_VM_READ | PROCESS_CREATE_THREAD | PROCESS_QUERY_INFORMATION
+/// \param dll_path Path of the DLL to load
+bool remote_load_library_existing(HANDLE h, const char* dll_path);
 
 /// More advanced DLL injector that manually handles relocations and imports.
 /// Does not require a file on disk and will not add the DLL to the module list.
