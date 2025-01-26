@@ -40,9 +40,9 @@ int main(int argc, char** argv) {
 
     // Copy pd_loader_core.dll to a place where it can be read by the game, if it doesn't exist there.
     SHGetFolderPathA(0, CSIDL_LOCAL_APPDATA, NULL, 0, core_path);
-    strcat(core_path, "\\Packages\\Microsoft.MSEsper_8wekyb3d8bbwe\\RoamingState\\mods");
+    strncat(core_path, "\\Packages\\Microsoft.MSEsper_8wekyb3d8bbwe\\RoamingState\\mods", sizeof(core_path) - 1);
     _mkdir(core_path);
-    strcat(core_path, "\\pd_loader_core.dll");
+    strncat(core_path, "\\pd_loader_core.dll", sizeof(core_path) - 1);
     if (!file_exists(core_path)) {
         if (!file_exists("pd_loader_core.dll")) {
             printf("Couldn't find pd_loader_core.dll. Please place this file in the mods folder or next to the program.\n");
@@ -83,7 +83,7 @@ int main(int argc, char** argv) {
     process_id = get_pid_by_name("PDUWP.exe");
 
     printf("Injecting mods into Phantom Dust...");
-    self_inject(process_id, bootstrap, NULL);
+    self_inject(process_id, bootstrap);
 
     if (result != EXIT_SUCCESS) {
         system("pause");
