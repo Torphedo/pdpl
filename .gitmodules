@@ -1,3 +1,6 @@
 [submodule "ext/minhook"]
 	path = ext/minhook
 	url = https://github.com/TsudaKageyu/minhook
+[submodule "ext/bobtail"]
+	path = ext/bobtail
+	url = https://github.com/Torphedo/bobtail

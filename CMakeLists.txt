@@ -9,13 +9,15 @@ set(CMAKE_SHARED_LIBRARY_PREFIX "") # Remove "lib" prefix from output filename
 
 # Compile minhook.
 add_subdirectory(ext/minhook)
+add_subdirectory(ext/bobtail)
 
 add_executable(pdpl
-  "src/main.c"
-  "src/self_inject.c"
-  "src/hooks.c"
-  "src/path.c"
+    "src/main.c"
+    "src/self_inject.c"
+    "src/hooks.c"
+    "src/dll.c"
+    "src/process.c"
 )
-target_include_directories(pdpl PRIVATE "ext/minhook")
-target_link_libraries(pdpl PRIVATE "-s" minhook)
 
+target_include_directories(pdpl PRIVATE "ext/minhook")
+target_link_libraries(pdpl PRIVATE "-s" minhook bobtail)

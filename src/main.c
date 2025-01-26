@@ -2,19 +2,16 @@
 #include <stdlib.h>
 #include <stdbool.h>
 
-// Reduce the size of Windows.h to improve compile time
 #define WIN32_LEAN_AND_MEAN
-#define NOCOMM
-#define NOCLIPBOARD
-#define NODRAWTEXT
-#define NOMB
 #include <windows.h>
 #include <shlobj.h>
 #include <direct.h>
 
+#include <common/file.h>
+
 #include "self_inject.h"
-#include "path.h"
 #include "hooks.h"
+#include "dll.h"
 
 static char core_path[MAX_PATH] = {0};
 
@@ -76,14 +73,15 @@ int main(int argc, char** argv) {
     system("explorer shell:AppsFolder\\Microsoft.MSEsper_8wekyb3d8bbwe!App");
 
     // Wait for the game to start, so we can get a handle to it
-    while (get_pid_by_name("PDUWP.exe") == 0) {
+    process_id = 0;
+    while (process_id == 0) {
         Sleep(1);
+        process_id = get_pid_by_name("PDUWP.exe");
     }
 
-    process_id = get_pid_by_name("PDUWP.exe");
-
     printf("Injecting mods into Phantom Dust...");
-    self_inject(process_id, bootstrap);
+    remote_load_library(process_id, core_path);
+    // self_inject(process_id, bootstrap);
 
     if (result != EXIT_SUCCESS) {
         system("pause");

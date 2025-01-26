@@ -23,14 +23,14 @@ void hook_check_version(void) {
     if (*version_number <= 140) {
         *version_number = 0;
     }
-    return original_check_version();
+    original_check_version();
 }
 
 void hook_check_version_create(void* unknown_ptr, int unknown_int) {
     if (*version_number <= 140) {
         *version_number = 0;
     }
-    return original_check_version_create(unknown_ptr, unknown_int);
+    original_check_version_create(unknown_ptr, unknown_int);
 }
 
 bool hook_create_anti_cheat() {
