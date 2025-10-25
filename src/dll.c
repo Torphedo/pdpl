@@ -215,7 +215,7 @@ bool dll_inject_memory(uint32_t pid, uint8_t* dll_data) {
 				void* proc_addr = get_remote_proc_addr(module_name, func_name, remote);
 				addresses[lookup_idx].u1.AddressOfData = (ULONGLONG)proc_addr;
 
-				LOG_MSG(info, "DLL imports %s::%s\n", module_name, func_name);
+				// LOG_MSG(info, "DLL imports %s::%s\n", module_name, func_name);
 			}
 			// Go to next function import
 			lookup = &lookup[1];
@@ -225,9 +225,21 @@ bool dll_inject_memory(uint32_t pid, uint8_t* dll_data) {
 		import_dir = &import_dir[1];
 	}
 
+    // We need to know where the image will go for relocation
+    uint8_t* remote_image = VirtualAllocEx(remote, (uint8_t*)image_base, image_size, MEM_RESERVE | MEM_COMMIT, PAGE_EXECUTE_READWRITE);
+    if (remote_image == NULL) {
+        LOG_MSG(error, "Couldn't allocate 0x%lx bytes for remote image\n", image_size);
+        CloseHandle(remote);
+        return false;
+    }
+
+    const s64 reloc_bias = (s64)image_base - (s64)remote_image;
+    if (reloc_bias != 0) {
+        LOG_MSG(debug, "reloc bias = 0x%x\n", reloc_bias);
+    }
+
     // Relocate image, to ensure that it will have correct addresses once it's in the target process
     IMAGE_BASE_RELOCATION* reloc_table = (IMAGE_BASE_RELOCATION*)((uintptr_t)new_image + nt_header->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_BASERELOC].VirtualAddress);
-
     while (reloc_table->SizeOfBlock > 0) {
         // BASE_RELOCATION_ENTRY is 2 bytes, so the size (minus header) over 2 is our entry count
         // (not using sizeof(BASE_RELOCATION_ENTRY) because some compilers might add padding or something on bitfields)
@@ -239,26 +251,13 @@ bool dll_inject_memory(uint32_t pid, uint8_t* dll_data) {
             if (entries[i].Offset) {
                 // Get the address of the pointer we need to relocate, then add our image base delta.
                 uintptr_t* patched_address = (uintptr_t*)((uintptr_t)new_image + reloc_table->VirtualAddress + entries[i].Offset);
-                // *patched_address += (uintptr_t)new_image;
+                *patched_address += reloc_bias;
             }
         }
 
         // Go to the next relocation table and repeat. There is one table per 4KiB page.
         reloc_table = (IMAGE_BASE_RELOCATION*)((uintptr_t)reloc_table + reloc_table->SizeOfBlock);
     }
-
-
-    uint8_t* remote_image = VirtualAllocEx(remote, (uint8_t*)image_base, image_size, MEM_RESERVE | MEM_COMMIT, PAGE_EXECUTE_READWRITE);
-	if (remote_image == NULL) {
-		LOG_MSG(error, "Couldn't allocate 0x%lx bytes for remote image\n", image_size);
-		CloseHandle(remote);
-		return false;
-	}
-
-	uintptr_t reloc_bias = (uintptr_t)remote_image - (uintptr_t)image_base;
-	if (reloc_bias != 0) {
-		LOG_MSG(debug, "reloc bias = 0x%x\n", reloc_bias);
-	}
 
 	// Write image to remote process
 	WriteProcessMemory(remote, remote_image, new_image, image_size, NULL);
