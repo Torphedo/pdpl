@@ -5,9 +5,27 @@
 #include <stdbool.h>
 
 #include <psapi.h>
+#include <tlhelp32.h> // For process snapshots
 
 #include <common/path.h>
 #include <common/logging.h>
+
+uint32_t get_pid_by_name(const char* process_name) {
+    PROCESSENTRY32 entry = {
+        .dwSize = sizeof(PROCESSENTRY32)
+    };
+    HANDLE snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
+    if (Process32First(snapshot, &entry)) {
+        while (Process32Next(snapshot, &entry)) {
+            if (!lstrcmpi(entry.szExeFile, process_name)) {
+                CloseHandle(snapshot);
+                return entry.th32ProcessID;
+            }
+        }
+    }
+    CloseHandle(snapshot); // close handle on failure
+    return 0;
+}
 
 bool enable_debug_privilege(bool bEnable) {
 	HANDLE hToken = NULL;

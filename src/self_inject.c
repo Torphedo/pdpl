@@ -2,26 +2,6 @@
 
 #include "self_inject.h"
 
-// For process snapshots.
-#include <tlhelp32.h>
-
-uint32_t get_pid_by_name(const char* process_name) {
-  PROCESSENTRY32 entry = {
-		  .dwSize = sizeof(PROCESSENTRY32)
-  };
-  HANDLE snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
-  if (Process32First(snapshot, &entry)) {
-	while (Process32Next(snapshot, &entry)) {
-	  if (!lstrcmpi(entry.szExeFile, process_name)) {
-		CloseHandle(snapshot);
-		return entry.th32ProcessID;
-	  }
-	}
-  }
-  CloseHandle(snapshot); // close handle on failure
-  return 0;
-}
-
 typedef struct BASE_RELOCATION_ENTRY {
 	USHORT Offset : 12;
 	USHORT Type : 4;

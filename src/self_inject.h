@@ -10,8 +10,6 @@
 #define NOMB
 #include <windows.h>
 
-uint32_t get_pid_by_name(const char* ProcessName);
-
 /// Inject the current executable into another process and call the specified function.
 /// \param process_id ID of the process you want to inject into
 /// \param entry_point Function pointer to the start routine you want to use. THIS NEEDS TO BE A REAL LPTHREAD_START_ROUTINE OR IT WILL CRASH ON RETURN!
