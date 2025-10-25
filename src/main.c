@@ -1,4 +1,3 @@
-#include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
 
@@ -8,33 +7,13 @@
 #include <direct.h>
 
 #include <common/file.h>
+#include <common/logging.h>
 
-#include "self_inject.h"
-#include "hooks.h"
 #include "dll.h"
 #include "process.h"
 
-static char core_path[MAX_PATH] = {0};
-
-DWORD bootstrap(void* loader_path) {
-    hook_create_anti_cheat();
-
-    // Get version number offset.
-    const uintptr_t esper_base = (uintptr_t) GetModuleHandleA("PDUWP.exe");
-    uint32_t* version_number = (uint32_t*)(uintptr_t)(esper_base + 0x4C5250);
-
-    while (true) {
-        // The version number is also reset like this (by our anti-cheat hooks) whenever the game tries to check it.
-        if (*version_number <= 140) {
-            *version_number = 0;
-        }
-        Sleep(1);
-    }
-}
-
-int main(int argc, char** argv) {
-    static int result = EXIT_SUCCESS;
-
+int main() {
+    static char core_path[MAX_PATH] = {0};
     // Copy pd_loader_core.dll to a place where it can be read by the game, if it doesn't exist there.
     SHGetFolderPathA(0, CSIDL_LOCAL_APPDATA, NULL, 0, core_path);
     strncat(core_path, "\\Packages\\Microsoft.MSEsper_8wekyb3d8bbwe\\RoamingState\\mods", sizeof(core_path) - 1);
@@ -42,29 +21,27 @@ int main(int argc, char** argv) {
     strncat(core_path, "\\pd_loader_core.dll", sizeof(core_path) - 1);
     if (!file_exists(core_path)) {
         if (!file_exists("pd_loader_core.dll")) {
-            printf("Couldn't find pd_loader_core.dll. Please place this file in the mods folder or next to the program.\n");
+            LOG_MSG(error, "Couldn't find pd_loader_core.dll. Please place this file in the mods folder or next to the program.\n");
             system("pause");
-        }
-        else {
-            printf("Copying pd_loader_core.dll into the mods folder for first-time setup.\n");
+        } else {
+            LOG_MSG(info, "Copying pd_loader_core.dll into the mods folder for first-time setup.\n");
             CopyFile("pd_loader_core.dll", core_path, FALSE);
         }
     }
 
-    // The easy way, but sometimes flagged for being a giant command.
+    // The easy way, but sometimes flagged by antivirus for being a giant command.
     // system("if not exist %LOCALAPPDATA%\\Packages\\Microsoft.MSEsper_8wekyb3d8bbwe\\RoamingState\\mods\\pd_loader_core.dll (cp pd_loader_core.dll %LOCALAPPDATA%\\Packages\\Microsoft.MSEsper_8wekyb3d8bbwe\\RoamingState\\mods\\pd_loader_core.dll)");
 
     // Kill Phantom Dust if it's already running
     uint32_t process_id = get_pid_by_name("PDUWP.exe");
     if (process_id != 0) {
-        // Get a handle with permission to terminate the game
+        // Terminate Phantom Dust
         void* process = OpenProcess(PROCESS_TERMINATE, false, process_id);
-        if (process == NULL) {
-            printf("main(): Unable to open process ID %d for termination.\n", process_id);
+        if (!process) {
+            LOG_MSG(error, "Unable to open process ID %d for termination.\n", process_id);
             system("pause");
             return EXIT_FAILURE;
         }
-        // Terminate Phantom Dust with a success error code
         TerminateProcess(process, EXIT_SUCCESS);
         CloseHandle(process);
     }
@@ -80,14 +57,8 @@ int main(int argc, char** argv) {
         process_id = get_pid_by_name("PDUWP.exe");
     }
 
-    printf("Injecting mods into Phantom Dust...\n");
-    // dll_inject_memory_file(process_id, core_path);
+    LOG_MSG(info, "Injecting mods into Phantom Dust...\n");
+    remote_load_library(process_id, core_path);
 
-    // dll_inject_memory_file(process_id, argv[0]);
-    self_inject(process_id, bootstrap);
-
-    if (result != EXIT_SUCCESS) {
-        system("pause");
-    }
-	return result;
+	return EXIT_SUCCESS;
 }
